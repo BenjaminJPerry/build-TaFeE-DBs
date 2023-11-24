@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-#source: https://github.com/rrwick/Metagenomics-Index-Correction#kraken2
 """
 This script will convert a GTDB taxonomy into the style of an NCBI taxonomy, appropriate for usage
 when building a Centrifuge or Kraken database.
@@ -51,6 +50,8 @@ def get_arguments():
                              help='Filename of concatenated FASTA')
     output_args.add_argument('--kraken_dir', type=str,
                              help='Directory to put Kraken-formatted assemblies')
+    output_args.add_argument('--krakenuniq_dir', type=str,
+                             help='Directory to put KrakenUniq-formatted assemblies')
     return parser.parse_args()
 
 
@@ -64,23 +65,28 @@ def main():
     write_nodes_file(args.nodes, id_to_taxon, taxon_to_id, parents, max_id)
     write_names_file(args.names, id_to_taxon, not_unique_names, max_id)
 
-    if args.assemblies is not None:
-        accessions = sorted(accession_to_species.keys())
-        all_assemblies = [str(x) for x in sorted(pathlib.Path(args.assemblies).glob('**/*'))
-                          if x.is_file()]
-        if args.tree is not None:
-            whitelist = load_tree(args.tree)
-            accessions = [x for x in accessions if x in whitelist]
-        acc_to_assemblies = find_assemblies_for_accessions(accessions, all_assemblies)
+    if args.assemblies is None:
+        quit()
 
-        if args.conversion is not None:
-            write_conversion_file(args.conversion, accession_to_species, taxon_to_id,
-                                  acc_to_assemblies, accessions)
-        if args.cat_fasta is not None:
-            make_cat_fasta(args.cat_fasta, acc_to_assemblies, accessions)
-        if args.kraken_dir is not None:
-            make_kraken_dir(args.kraken_dir, accession_to_species, taxon_to_id, acc_to_assemblies,
-                            accessions)
+    accessions = sorted(accession_to_species.keys())
+    all_assemblies = [str(x) for x in sorted(pathlib.Path(args.assemblies).glob('**/*'))
+                      if x.is_file()]
+    if args.tree is not None:
+        whitelist = load_tree(args.tree)
+        accessions = [x for x in accessions if x in whitelist]
+    acc_to_assemblies = find_assemblies_for_accessions(accessions, all_assemblies)
+
+    if args.conversion is not None:
+        write_conversion_file(args.conversion, accession_to_species, taxon_to_id,
+                              acc_to_assemblies, accessions)
+    if args.cat_fasta is not None:
+        make_cat_fasta(args.cat_fasta, acc_to_assemblies, accessions)
+    if args.kraken_dir is not None:
+        make_kraken_dir(args.kraken_dir, accession_to_species, taxon_to_id, acc_to_assemblies,
+                        accessions)
+    if args.krakenuniq_dir is not None:
+        make_krakenuniq_dir(args.krakenuniq_dir, accession_to_species, taxon_to_id,
+                            acc_to_assemblies, accessions)
     print()
 
 
@@ -96,6 +102,15 @@ def check_args(args):
                 sys.exit('Error: {} is not empty'.format(kraken_dir))
         else:
             os.makedirs(str(kraken_dir))
+    if args.krakenuniq_dir is not None:
+        krakenuniq_dir = pathlib.Path(args.krakenuniq_dir)
+        if krakenuniq_dir.is_file():
+            sys.exit('Error: {} is a file (must be a directory)'.format(krakenuniq_dir))
+        if krakenuniq_dir.is_dir():
+            if len(list(krakenuniq_dir.iterdir())) > 0:
+                sys.exit('Error: {} is not empty'.format(krakenuniq_dir))
+        else:
+            os.makedirs(str(krakenuniq_dir))
 
 
 def load_taxa(gtdb_taxonomy_filename):
@@ -137,6 +152,18 @@ def set_tax_ids(all_taxa):
     id_to_taxon = {1: ''}
     taxon_to_id = {'': 1}
     tax_id_counter = itertools.count(start=2)
+
+    # If taxa for humans are included, put them first.
+    human_tax_levels = []
+    for taxon in ['d__Eukaryota', 'p__Chordata', 'c__Mammalia', 'o__Primates', 'f__Hominidae',
+                  'g__Homo', 's__Homo sapiens']:
+        if taxon in all_taxa:
+            tax_id = next(tax_id_counter)
+            id_to_taxon[tax_id] = taxon
+            taxon_to_id[taxon] = tax_id
+            all_taxa.remove(taxon)
+
+    # Then the rest of the taxa (prokaryotes) are in level/alphabetical order.
     for level in ['d__', 'p__', 'c__', 'o__', 'f__', 'g__', 's__']:
         level_taxa = sorted(x for x in all_taxa if x.startswith(level))
         level_name = {'d__': 'domains: ', 'p__': 'phyla:   ', 'c__': 'classes: ',
@@ -150,6 +177,7 @@ def set_tax_ids(all_taxa):
             else:
                 taxon_to_id[taxon] = tax_id
         print('    {}{:>7,}'.format(level_name, len(level_taxa)))
+
     max_id = next(tax_id_counter)
     return id_to_taxon, taxon_to_id, max_id
 
@@ -285,7 +313,7 @@ def write_conversion_file(conversion_filename, accession_to_species, taxon_to_id
                 contig_names = load_contig_names(assembly_filename)
                 tax_id = taxon_to_id[accession_to_species[accession]]
                 for contig_name in contig_names:
-                    conversion_file.write('{}_{}\t{}\n'.format(accession, contig_name, tax_id))
+                    conversion_file.write(f'{accession}_{contig_name}\t{tax_id}\n')
                 found_count += 1
                 print('\r    {:,} / {:,} assemblies'.format(found_count,
                                                             total_count), end='', flush=True)
@@ -320,13 +348,29 @@ def make_kraken_dir(kraken_dir, accession_to_species, taxon_to_id, acc_to_assemb
             contigs = load_fasta(assembly_filename)
             tax_id = taxon_to_id[accession_to_species[accession]]
             new_filename = kraken_dir / (accession + '.fa')
-            with open(str(new_filename), 'wt') as kraken_fasta:
+            with open(new_filename, 'wt') as kraken_fasta:
                 for contig_name, contig_seq in contigs:
-                    kraken_fasta.write('>{}_{}|kraken:taxid|{}\n'.format(accession, contig_name,
-                                                                         tax_id))
-                    kraken_fasta.write('{}\n'.format(contig_seq))
-        print('\r    {:,} / {:,} assemblies'.format(found_count,
-                                                    total_count), end='', flush=True)
+                    kraken_fasta.write(f'>{accession}_{contig_name}|kraken:taxid|{tax_id}\n')
+                    kraken_fasta.write(f'{contig_seq}\n')
+        print(f'\r    {found_count:,} / {total_count:,} assemblies', end='', flush=True)
+    print()
+
+
+def make_krakenuniq_dir(kraken_dir, accession_to_species, taxon_to_id, acc_to_assemblies, accessions):
+    print('\nMaking KrakenUniq assembly directory:')
+    kraken_dir = pathlib.Path(kraken_dir)
+    found_count, total_count = 0, len(acc_to_assemblies)
+    for accession in accessions:
+        if accession in acc_to_assemblies:
+            assembly_filename = acc_to_assemblies[accession]
+            found_count += 1
+            contigs = load_fasta(assembly_filename)
+            tax_id = taxon_to_id[accession_to_species[accession]]
+            new_filename = kraken_dir / (accession + '.fa')
+            with open(new_filename, 'wt') as kraken_fasta:
+                for contig_name, contig_seq in contigs:
+                    kraken_fasta.write(f'>{accession}_{contig_name}\n{contig_seq}\n')
+        print(f'\r    {found_count:,} / {total_count:,} assemblies', end='', flush=True)
     print()
 
 
