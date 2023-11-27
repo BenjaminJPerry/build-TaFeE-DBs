@@ -246,7 +246,7 @@ rule build_kraken2:
         'kraken2'
     threads: 64
     resources:
-        partition='hugemem'
+        partition='hugemem',
         time = lambda wildcards, attempt: attempt * 24 * 60,
         mem_gb = lambda wildcards, attempt: attempt * 1600
     shell:
