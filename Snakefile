@@ -144,7 +144,7 @@ rule get_genomes:
         wapiti=config['wapiti-genome'],
     shell:
         '''
-        mkdir GTDB/host_genomes
+        mkdir -p GTDB/host_genomes
         wget -O {output.gtd_genomes_gz} {params.gtdbGenomes};
         wget -O {output.sheep_gz} {params.sheep};
         wget -O {output.cow_gz} {params.cow};
@@ -168,7 +168,7 @@ rule prepare_GTDB_genomes:
         '''
         tar -xvzf {input};
 
-        mkdir {output}; 
+        mkdir -p {output}; 
 
         find GTDB/gtdb_genomes_reps_latest -name "*.fna.gz" -exec mv -t {output}/ {{}} +;
 
