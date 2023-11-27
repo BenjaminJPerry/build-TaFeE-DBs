@@ -10,7 +10,7 @@ cluster:
     --output=logs/slurm/{rule}-{wildcards}-%j.out
     --parsable
 default-resources:
-  - account="2023-mbie-rumen-metagenomes"
+  - account="2023-mbie-rumen-gbs"
   - partition=compute,hugemem
   - time=480
   - mem_gb=24
