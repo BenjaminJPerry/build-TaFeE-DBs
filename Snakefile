@@ -35,8 +35,7 @@ rule get_GTDB_bac_metadata:
     threads: 2
     params:
         bacMeta=config['gtdb-bac-metadata']
-    resources:
-        partition='compute'
+    localrule: True
     shell:
         '''
         wget -O GTDB/bac120_metadata_latest.tar.gz {params.bacMeta};
@@ -50,8 +49,7 @@ rule get_GTDB_arc_metadata:
     threads: 2
     params:
         arcMeta=config['gtdb-arc-metadata']
-    resources:
-        partition='compute'
+    localrule: True
     shell:
         '''
         wget -O GTDB/ar53_metadata_latest.tar.gz {params.arcMeta};
@@ -79,8 +77,7 @@ rule get_GTDB_bac_tax:
     output:
         bacTax='GTDB/bac120_taxonomy_latest.tsv'
     threads: 2
-    resources:
-        partition='compute'
+    localrule: True
     params:
         gtdbBacTax=config['gtdb-bac-tax']
     shell:
@@ -94,8 +91,7 @@ rule get_GTDB_arc_tax:
     output:
         arcTax='GTDB/ar53_taxonomy_latest.tsv'
     threads: 2
-    resources:
-        partition='compute'
+    localrule: True
     params:
         gtdbArcTax = config['gtdb-arc-tax']
     shell:
@@ -132,8 +128,8 @@ rule get_genomes:
         deer_gz = 'GTDB/host_genomes/deer.fna.gz',
         wapiti_gz = 'GTDB/host_genomes/wapiti.fna.gz',
     threads: 2
+    localrule: True,
     resources:
-        partition='compute',
         time = lambda wildcards, attempt: attempt * 7 * 24 * 60
     params:
         gtdbGenomes=config['gtdb-genomes'],
