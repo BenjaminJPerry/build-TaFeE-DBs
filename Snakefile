@@ -25,6 +25,7 @@ rule targets:
     input:
         'GTDB/kraken2-GTDB-214.1/hash.k2d',
         'GTDB/merged_metadata.tsv',
+        'K2NT-20230205'
         #'biobakery/...' #TODO
 
 
@@ -255,7 +256,20 @@ rule build_kraken2:
         '''
 
 
-#rule kraken2_prebuilt_ntdb:
+rule kraken2_prebuilt_ntdb:
+    output:
+        directory('K2NT-20230205')
+    threads: 2
+    resources:
+        partition='compute'
+    params:
+        k2_prebuilt_nt = config['k2nt']
+    shell:
+        '''
+        wget -O K2NT-20230205.tar.gz {params.k2_prebuilt_nt};
+        tar -xvzf K2NT-20230205.tar.gz;
+        '''
+
 
 #rule humann3_protein: #TODO
 

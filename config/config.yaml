@@ -24,3 +24,5 @@ goat-genome: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/704/415/GCF_001704
 deer-genome: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/910/594/005/GCF_910594005.1_mCerEla1.1/GCF_910594005.1_mCerEla1.1_genomic.fna.gz
 wapiti-genome: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/019/320/065/GCF_019320065.1_ASM1932006v1/GCF_019320065.1_ASM1932006v1_genomic.fna.gz
 
+# public k2 prebuilts
+k2nt: https://genome-idx.s3.amazonaws.com/kraken/k2_nt_20230502.tar.gz
