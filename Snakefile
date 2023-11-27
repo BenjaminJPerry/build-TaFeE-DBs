@@ -204,7 +204,9 @@ rule prepare_kraken2_build:
         nodes = 'GTDB/nodes.dmp',
         names = 'GTDB/names.dmp'
     output:
-        directory('GTDB/kraken2-GTDB-214.1'),
+        genomes_prep = directory('GTDB/kraken2-GTDB-214.1'),
+        names_prep = 'GTDB/kraken2-GTDB-214.1/taxonomy/names.dmp'
+        nodes_prep = 'GTDB/kraken2-GTDB-214.1/taxonomy/nodes.dmp'
     conda:
         'kraken2'
     threads: 64
@@ -228,9 +230,11 @@ rule prepare_kraken2_build:
 
 rule build_kraken2:
     input:
-        'GTDB/kraken2-GTDB-214.1'
+        genomes_prep = 'GTDB/kraken2-GTDB-214.1',
+        names_prep = 'GTDB/kraken2-GTDB-214.1/taxonomy/names.dmp',
+        nodes_prep = 'GTDB/kraken2-GTDB-214.1/taxonomy/nodes.dmp',
     output:
-        kraken2_index = 'GTDB/kraken2-GTDB-214.1/hash.k2d'
+        kraken2_index = 'GTDB/kraken2-GTDB-214.1/hash.k2d',
     conda:
         'kraken2'
     threads: 64
