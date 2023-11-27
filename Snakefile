@@ -136,12 +136,12 @@ rule get_genomes:
         partition='compute',
         time = lambda wildcards, attempt: attempt * 7 * 24 * 60
     params:
-        gtdbGenomes=config['gtdb-genomes']
-        sheep=config['sheep-genome']
-        cow=config['cow-genome']
-        goat=config['goat-genome']
-        deer=config['deer-genome']
-        wapiti=config['wapiti-genome']
+        gtdbGenomes=config['gtdb-genomes'],
+        sheep=config['sheep-genome'],
+        cow=config['cow-genome'],
+        goat=config['goat-genome'],
+        deer=config['deer-genome'],
+        wapiti=config['wapiti-genome'],
     shell:
         '''
         mkdir GTDB/host_genomes
