@@ -1,19 +1,26 @@
 # Configuration file for building GTDB based taxonomic and functional databases
 
+
 # archive of representative genomes
-gtdb-genomes: https://data.ace.uq.edu.au/public/gtdb/data/releases/release207/207.0/genomic_files_reps/gtdb_genomes_reps_r207.tar.gz
+#gtdb-genomes: https://data.ace.uq.edu.au/public/gtdb/data/releases/release207/207.0/genomic_files_reps/gtdb_genomes_reps_r207.tar.gz
+gtdb-genomes: https://data.ace.uq.edu.au/public/gtdb/data/releases/release214/214.1/genomic_files_reps/gtdb_genomes_reps_r214.tar.gz
 
 # taxonomic summary files
-gtdb-bac-tax: https://data.ace.uq.edu.au/public/gtdb/data/releases/release207/207.0/bac120_taxonomy_r207.tsv.gz
-gtdb-arc-tax: https://data.ace.uq.edu.au/public/gtdb/data/releases/release207/207.0/ar53_taxonomy_r207.tsv.gz
+# gtdb-bac-tax: https://data.ace.uq.edu.au/public/gtdb/data/releases/release207/207.0/bac120_taxonomy_r207.tsv.gz
+# gtdb-arc-tax: https://data.ace.uq.edu.au/public/gtdb/data/releases/release207/207.0/ar53_taxonomy_r207.tsv.gz
+gtdb-bac-tax: https://data.ace.uq.edu.au/public/gtdb/data/releases/release214/214.1/bac120_taxonomy_r214.tsv.gz
+gtdb-arc-tax: https://data.ace.uq.edu.au/public/gtdb/data/releases/release214/214.1/ar53_taxonomy_r214.tsv.gz
+
 
 # genome metadata for filtering accessions
-gtdb-bac-metadata: https://data.ace.uq.edu.au/public/gtdb/data/releases/release207/207.0/bac120_metadata_r207.tar.gz
-gtdb-arc-metadata: https://data.ace.uq.edu.au/public/gtdb/data/releases/release207/207.0/ar53_metadata_r207.tar.gz
+gtdb-bac-metadata: https://data.ace.uq.edu.au/public/gtdb/data/releases/release214/214.1/bac120_metadata_r214.tsv.gz
+gtdb-arc-metadata: https://data.ace.uq.edu.au/public/gtdb/data/releases/release214/214.1/ar53_metadata_r214.tsv.gz
 
-# Struo2 release of UniRef90 data
-struo2-uniref90: http://ftp.tue.mpg.de/ebio/projects/struo2/install/uniref_2019.01/UniRef90_mmseqs.tar.gz
 
-# Struo2 release of Uniref50 to Uniref90 mapping
-struo2-uniref-mapping: http://ftp.tue.mpg.de/ebio/projects/struo2/install/uniref_2019.01/uniref50-90.pkl
+# host genomes
+sheep-genome: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/298/735/GCF_000298735.2_Oar_v4.0/GCF_000298735.2_Oar_v4.0_genomic.fna.gz
+cow-genome: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/002/263/795/GCF_002263795.3_ARS-UCD2.0/GCF_002263795.3_ARS-UCD2.0_genomic.fna.gz
+goat-genome: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/704/415/GCF_001704415.2_ARS1.2/GCF_001704415.2_ARS1.2_genomic.fna.gz
+deer-genome: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/910/594/005/GCF_910594005.1_mCerEla1.1/GCF_910594005.1_mCerEla1.1_genomic.fna.gz
+wapiti-genome: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/019/320/065/GCF_019320065.1_ASM1932006v1/GCF_019320065.1_ASM1932006v1_genomic.fna.gz
 
