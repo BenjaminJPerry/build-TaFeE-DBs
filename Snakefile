@@ -36,7 +36,7 @@ rule get_GTDB_bac_metadata:
     params:
         bacMeta=config['gtdb-bac-metadata']
     resources:
-        partition='inv-iranui-fast'
+        partition='compute'
     shell:
         '''
         wget -O GTDB/bac120_metadata_latest.tar.gz {params.bacMeta};
@@ -51,7 +51,7 @@ rule get_GTDB_arc_metadata:
     params:
         arcMeta=config['gtdb-arc-metadata']
     resources:
-        partition='inv-iranui-fast'
+        partition='compute'
     shell:
         '''
         wget -O GTDB/ar53_metadata_latest.tar.gz {params.arcMeta};
@@ -66,6 +66,8 @@ rule make_merged_metadata:
         bac120Metadata='GTDB/bac120_metadata_latest.tsv',
         arc53Metadata='GTDB/ar53_metadata_latest.tsv',
     threads: 2
+    resources:
+        partition='compute'
     shell:
         '''
         cat {input.bac120Metadata} > {output.metadata};
@@ -77,6 +79,8 @@ rule get_GTDB_bac_tax:
     output:
         bacTax='GTDB/bac120_taxonomy_latest.tsv'
     threads: 2
+    resources:
+        partition='compute'
     params:
         gtdbBacTax=config['gtdb-bac-tax']
     shell:
@@ -90,6 +94,8 @@ rule get_GTDB_arc_tax:
     output:
         arcTax='GTDB/ar53_taxonomy_latest.tsv'
     threads: 2
+    resources:
+        partition='compute'
     params:
         gtdbArcTax = config['gtdb-arc-tax']
     shell:
@@ -107,6 +113,8 @@ rule make_merged_taxonomy:
         arc_taxonomy='GTDB/ar53_taxonomy_latest.tsv',
         bac_taxonomy='GTDB/bac120_taxonomy_latest.tsv',
     threads: 2
+    resources:
+        partition='compute'
     shell:
         '''
         cat {input.host_taxonomy} > {output.metadata};
@@ -118,14 +126,15 @@ rule make_merged_taxonomy:
 rule get_genomes:
     output:
         gtd_genomes_gz='GTDB/gtdb_genomes_reps_latest.tar.gz',
-        sheep_gz = 'GTDB/host_genomes/sheep.tar.gz',
-        cow_gz = 'GTDB/host_genomes/cow.tar.gz',
-        goat_gz = 'GTDB/host_genomes/goat.tar.gz',
-        deer_gz = 'GTDB/host_genomes/deer.tar.gz',
-        wapiti_gz = 'GTDB/host_genomes/wapiti.tar.gz',
+        sheep_gz = 'GTDB/host_genomes/sheep.fna.gz',
+        cow_gz = 'GTDB/host_genomes/cow.fna.gz',
+        goat_gz = 'GTDB/host_genomes/goat.fna.gz',
+        deer_gz = 'GTDB/host_genomes/deer.fna.gz',
+        wapiti_gz = 'GTDB/host_genomes/wapiti.fna.gz',
     threads: 2
     resources:
-        time = lambda wildcards, attempt: attempt * 5 * 24 * 60
+        partition='compute',
+        time = lambda wildcards, attempt: attempt * 7 * 24 * 60
     params:
         gtdbGenomes=config['gtdb-genomes']
         sheep=config['sheep-genome']
@@ -153,7 +162,8 @@ rule prepare_GTDB_genomes:
         directory('GTDB/input_genomes'),
     threads: 2
     resources:
-        time = lambda wildcards, attempt: attempt * 24 * 60 # hours * minutes
+        partition='compute',
+        time = lambda wildcards, attempt: attempt * 2 * 24 * 60
     shell:
         '''
         tar -xvzf {input};
@@ -173,9 +183,12 @@ rule prepKraken2Build:
         genomes_out = directory('GTDB/kraken_genomes'),
         nodes = 'GTDB/nodes.dmp',
         names = 'GTDB/names.dmp'
+    conda:
+        'kraken2'
     threads: 2
     resources:
-        time = lambda wildcards, attempt: attempt * 24 * 60,
+        partition='compute',
+        time = lambda wildcards, attempt: attempt * 2 * 24 * 60,
     shell:
         '''
         python {input.tax_from_gtdb} --gtdb {input.taxonomy} --assemblies {input.genomes} --nodes {output.nodes} --names {output.names} --kraken_dir {output.genomes_out} &&
@@ -196,8 +209,9 @@ rule prepare_kraken2_build:
         'kraken2'
     threads: 64
     resources:
-        time = lambda wildcards, attempt: attempt * 24 * 60,
-        mem_gb = lambda wildcards, attempt: attempt * 
+        partition='compute',
+        time = lambda wildcards, attempt: attempt * 5 * 24 * 60,
+        mem_gb = lambda wildcards, attempt: attempt * 12
     shell:
         '''
         for file in $(ls {input.genomes});
@@ -222,15 +236,13 @@ rule build_kraken2:
     threads: 64
     resources:
         time = lambda wildcards, attempt: attempt * 24 * 60,
-        mem_gb = lambda wildcards, attempt: attempt * 
+        mem_gb = lambda wildcards, attempt: attempt * 1600
     shell:
         '''
         kraken2-build --build --threads 64 --db {input}
 
         '''
 
-# rule buildKCMP:
+#rule humann3_protein: #TODO
 
-# rule buildCentrifuge:
-
-# rule buildGanon:
+#rule humann3_default: #TODO
