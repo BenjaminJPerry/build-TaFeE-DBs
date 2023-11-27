@@ -159,7 +159,7 @@ rule prepare_GTDB_genomes:
     input:
         'GTDB/gtdb_genomes_reps_latest.tar.gz'
     output:
-        directory('GTDB/input_genomes'),
+        directory('GTDB/input_genomes')
     threads: 2
     resources:
         partition='compute',
@@ -167,9 +167,12 @@ rule prepare_GTDB_genomes:
     shell:
         '''
         tar -xvzf {input};
+
         mkdir {output}; 
-        find GTDB/gtdb_genomes_reps_latest -name "*.fna.gz" -exec mv -t {output}/ {} +;
-        find GTDB/host_genomes -name "*.fna.gz" -exec mv -t {output}/ {} +;
+
+        find GTDB/gtdb_genomes_reps_latest -name "*.fna.gz" -exec mv -t {output}/ {{}} +;
+
+        find GTDB/host_genomes -name "*.fna.gz" -exec mv -t {output}/ {{}} +;
 
         '''
 
