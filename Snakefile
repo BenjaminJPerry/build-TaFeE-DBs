@@ -35,7 +35,8 @@ rule get_GTDB_bac_metadata:
     threads: 2
     params:
         bacMeta=config['gtdb-bac-metadata']
-    localrule: True
+    resources:
+        partition='compute'
     shell:
         '''
         mkdir -p GTDB
@@ -50,7 +51,8 @@ rule get_GTDB_arc_metadata:
     threads: 2
     params:
         arcMeta=config['gtdb-arc-metadata']
-    localrule: True
+    resources:
+        partition='compute'
     shell:
         '''
         mkdir -p GTDB
@@ -79,7 +81,8 @@ rule get_GTDB_bac_tax:
     output:
         bacTax='GTDB/bac120_taxonomy_latest.tsv'
     threads: 2
-    localrule: True
+    resources:
+        partition='compute'
     params:
         gtdbBacTax=config['gtdb-bac-tax']
     shell:
@@ -94,7 +97,8 @@ rule get_GTDB_arc_tax:
     output:
         arcTax='GTDB/ar53_taxonomy_latest.tsv'
     threads: 2
-    localrule: True
+    resources:
+        partition='compute'
     params:
         gtdbArcTax = config['gtdb-arc-tax']
     shell:
@@ -132,7 +136,8 @@ rule get_genomes:
         deer_gz = 'GTDB/host_genomes/deer.fna.gz',
         wapiti_gz = 'GTDB/host_genomes/wapiti.fna.gz',
     threads: 2
-    localrule: True,
+    resources:
+        partition='compute'
     resources:
         time = lambda wildcards, attempt: attempt * 7 * 24 * 60
     params:
@@ -240,6 +245,7 @@ rule build_kraken2:
         'kraken2'
     threads: 64
     resources:
+        partition='hugemem'
         time = lambda wildcards, attempt: attempt * 24 * 60,
         mem_gb = lambda wildcards, attempt: attempt * 1600
     shell:
