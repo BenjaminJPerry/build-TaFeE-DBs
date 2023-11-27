@@ -38,6 +38,7 @@ rule get_GTDB_bac_metadata:
     localrule: True
     shell:
         '''
+        mkdir -p GTDB
         wget -O GTDB/bac120_metadata_latest.tar.gz {params.bacMeta};
         tar -xf GTDB/bac120_metadata_latest.tar.gz -O > {output.bac120Metadata};
         '''
@@ -52,6 +53,7 @@ rule get_GTDB_arc_metadata:
     localrule: True
     shell:
         '''
+        mkdir -p GTDB
         wget -O GTDB/ar53_metadata_latest.tar.gz {params.arcMeta};
         tar -xf GTDB/ar53_metadata_latest.tar.gz -O > {output.arc53Metadata};
         '''
@@ -82,6 +84,7 @@ rule get_GTDB_bac_tax:
         gtdbBacTax=config['gtdb-bac-tax']
     shell:
         '''
+        mkdir -p GTDB
         wget -O GTDB/bac120_taxonomy_latest.tsv.gz {params.gtdbBacTax};
         gunzip -c GTDB/bac120_taxonomy_latest.tsv.gz > {output.bacTax};
         '''
@@ -96,6 +99,7 @@ rule get_GTDB_arc_tax:
         gtdbArcTax = config['gtdb-arc-tax']
     shell:
         '''
+        mkdir -p GTDB
         wget -O GTDB/ar53_taxonomy_latest.tsv.gz {params.gtdbArcTax};
         gunzip -c GTDB/ar53_taxonomy_latest.tsv.gz > {output.arcTax};
         '''
