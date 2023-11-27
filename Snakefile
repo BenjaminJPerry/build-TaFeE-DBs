@@ -204,7 +204,6 @@ rule prepare_kraken2_build:
         nodes = 'GTDB/nodes.dmp',
         names = 'GTDB/names.dmp',
     output:
-        genomes_prep = directory('GTDB/kraken2-GTDB-214.1'),
         names_prep = 'GTDB/kraken2-GTDB-214.1/taxonomy/names.dmp',
         nodes_prep = 'GTDB/kraken2-GTDB-214.1/taxonomy/nodes.dmp',
     conda:
@@ -218,19 +217,18 @@ rule prepare_kraken2_build:
         '''
         for file in $(ls {input.genomes});
         do
-            kraken2-build --add-to-library {input.genomes}/$file --db {output}
+            kraken2-build --add-to-library {input.genomes}/$file --db GTDB/kraken2-GTDB-214.1
         done
 
-        mkdir -p {output}/taxonomy
-        mv {input.nodes} {output}/taxonomy/{input.nodes}
-        mv {input.names} {output}/taxonomy/{input.names}
+        mkdir -p GTDB/kraken2-GTDB-214.1/taxonomy
+        mv {input.nodes} GTDB/kraken2-GTDB-214.1/taxonomy/{input.nodes}
+        mv {input.names} GTDB/kraken2-GTDB-214.1/taxonomy/{input.names}
 
         '''
 
 
 rule build_kraken2:
     input:
-        genomes_prep = 'GTDB/kraken2-GTDB-214.1',
         names_prep = 'GTDB/kraken2-GTDB-214.1/taxonomy/names.dmp',
         nodes_prep = 'GTDB/kraken2-GTDB-214.1/taxonomy/nodes.dmp',
     output:
@@ -243,7 +241,7 @@ rule build_kraken2:
         mem_gb = lambda wildcards, attempt: attempt * 1600
     shell:
         '''
-        kraken2-build --build --threads 64 --db {input}
+        kraken2-build --build --threads 64 --db GTDB/kraken2-GTDB-214.1
 
         '''
 
