@@ -215,7 +215,7 @@ rule prepare_kraken2_build:
     resources:
         partition='compute',
         time = lambda wildcards, attempt: attempt * 5 * 24 * 60,
-        mem_gb = lambda wildcards, attempt: attempt * 12
+        mem_gb = lambda wildcards, attempt: attempt * 24
     shell:
         '''
         for file in $(ls {input.genomes});
