@@ -41,8 +41,8 @@ rule get_GTDB_bac_metadata:
     shell:
         '''
         mkdir -p GTDB
-        wget -O GTDB/bac120_metadata_latest.tar.gz {params.bacMeta};
-        tar -xf GTDB/bac120_metadata_latest.tar.gz -O > {output.bac120Metadata};
+        wget -O GTDB/bac120_metadata_latest.tsv.gz {params.bacMeta};
+        gunzip GTDB/bac120_metadata_latest.tsv.gz -O > {output.bac120Metadata};
         '''
 
 
@@ -57,8 +57,8 @@ rule get_GTDB_arc_metadata:
     shell:
         '''
         mkdir -p GTDB
-        wget -O GTDB/ar53_metadata_latest.tar.gz {params.arcMeta};
-        tar -xf GTDB/ar53_metadata_latest.tar.gz -O > {output.arc53Metadata};
+        wget -O GTDB/ar53_metadata_latest.tsv.gz {params.arcMeta};
+        gunzip GTDB/ar53_metadata_latest.tsv.gz -O > {output.arc53Metadata};
         '''
 
 
