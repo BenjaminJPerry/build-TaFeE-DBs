@@ -211,7 +211,7 @@ rule prepare_kraken2_build:
         nodes_prep = 'GTDB/kraken2-GTDB-214.1/taxonomy/nodes.dmp',
     conda:
         'kraken2'
-    threads: 64
+    threads: 16
     resources:
         partition='compute',
         time = lambda wildcards, attempt: attempt * 5 * 24 * 60,
@@ -220,7 +220,7 @@ rule prepare_kraken2_build:
         '''
         for file in $(ls {input.genomes});
         do
-            kraken2-build --add-to-library {input.genomes}/$file --db GTDB/kraken2-GTDB-214.1
+            kraken2-build --threads {threads} --add-to-library {input.genomes}/$file --db GTDB/kraken2-GTDB-214.1
         done
 
         mkdir -p GTDB/kraken2-GTDB-214.1/taxonomy
@@ -244,9 +244,12 @@ rule build_kraken2:
         mem_gb = lambda wildcards, attempt: attempt * 1600
     shell:
         '''
-        kraken2-build --build --threads 64 --db GTDB/kraken2-GTDB-214.1
+        kraken2-build --build --threads {threads} --db GTDB/kraken2-GTDB-214.1
 
         '''
+
+
+#rule kraken2_prebuilt_ntdb:
 
 #rule humann3_protein: #TODO
 
