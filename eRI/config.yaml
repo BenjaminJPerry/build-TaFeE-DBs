@@ -21,7 +21,7 @@ jobs: 150
 max-jobs-per-second: 0.5
 keep-going: True
 rerun-incomplete: True
-printshellcmds: False
+printshellcmds: True
 scheduler: greedy
 use-conda: True
 use-singularity: True
