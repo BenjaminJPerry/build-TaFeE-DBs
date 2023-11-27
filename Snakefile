@@ -172,7 +172,7 @@ rule prepare_GTDB_genomes:
         time = lambda wildcards, attempt: attempt * 2 * 24 * 60
     shell:
         '''
-        tar -xvzf {input};
+        tar -xvzf {input} -C GTDB/gtdb_genomes_reps_latest;
 
         mkdir -p {output}; 
 
@@ -272,5 +272,6 @@ rule kraken2_prebuilt_ntdb:
 
 
 #rule humann3_protein: #TODO
+    
 
 #rule humann3_default: #TODO
