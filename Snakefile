@@ -114,7 +114,7 @@ rule make_merged_taxonomy:
     output:
         metadata='GTDB/merged_taxonomy.tsv'
     input:
-        host_taxonomy='resources/host_taxonomy.tsv',
+        host_taxonomy='resources/eukaryotic_taxa.tsv',
         arc_taxonomy='GTDB/ar53_taxonomy_latest.tsv',
         bac_taxonomy='GTDB/bac120_taxonomy_latest.tsv',
     threads: 2
