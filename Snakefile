@@ -41,7 +41,7 @@ rule get_GTDB_bac_metadata:
     shell:
         '''
         mkdir -p GTDB
-        wget -O GTDB/bac120_metadata_latest.tsv.gz {params.bacMeta};
+        wget -c -O GTDB/bac120_metadata_latest.tsv.gz {params.bacMeta};
         gunzip -c GTDB/bac120_metadata_latest.tsv.gz > {output.bac120Metadata};
         '''
 
@@ -57,7 +57,7 @@ rule get_GTDB_arc_metadata:
     shell:
         '''
         mkdir -p GTDB
-        wget -O GTDB/ar53_metadata_latest.tsv.gz {params.arcMeta};
+        wget -c -O GTDB/ar53_metadata_latest.tsv.gz {params.arcMeta};
         gunzip -c GTDB/ar53_metadata_latest.tsv.gz > {output.arc53Metadata};
         '''
 
@@ -89,7 +89,7 @@ rule get_GTDB_bac_tax:
     shell:
         '''
         mkdir -p GTDB
-        wget -O GTDB/bac120_taxonomy_latest.tsv.gz {params.gtdbBacTax};
+        wget -c -O GTDB/bac120_taxonomy_latest.tsv.gz {params.gtdbBacTax};
         gunzip -c GTDB/bac120_taxonomy_latest.tsv.gz > {output.bacTax};
         '''
 
@@ -105,7 +105,7 @@ rule get_GTDB_arc_tax:
     shell:
         '''
         mkdir -p GTDB
-        wget -O GTDB/ar53_taxonomy_latest.tsv.gz {params.gtdbArcTax};
+        wget -c -O GTDB/ar53_taxonomy_latest.tsv.gz {params.gtdbArcTax};
         gunzip -c GTDB/ar53_taxonomy_latest.tsv.gz > {output.arcTax};
         '''
 
@@ -151,12 +151,12 @@ rule get_genomes:
     shell:
         '''
         mkdir -p GTDB/host_genomes
-        wget -O {output.gtd_genomes_gz} {params.gtdbGenomes};
-        wget -O {output.sheep_gz} {params.sheep};
-        wget -O {output.cow_gz} {params.cow};
-        wget -O {output.goat_gz} {params.goat};
-        wget -O {output.deer_gz} {params.deer};
-        wget -O {output.wapiti_gz} {params.wapiti};
+        wget -c -O {output.gtd_genomes_gz} {params.gtdbGenomes};
+        wget -c -O {output.sheep_gz} {params.sheep};
+        wget -c -O {output.cow_gz} {params.cow};
+        wget -c -O {output.goat_gz} {params.goat};
+        wget -c -O {output.deer_gz} {params.deer};
+        wget -c -O {output.wapiti_gz} {params.wapiti};
 
         '''
 
@@ -268,7 +268,7 @@ rule kraken2_prebuilt_ntdb:
         k2_prebuilt_nt = config['k2nt']
     shell:
         '''
-        wget -O K2NT-20230205.tar.gz {params.k2_prebuilt_nt};
+        wget -c -O K2NT-20230205.tar.gz {params.k2_prebuilt_nt};
         tar -xvzf K2NT-20230205.tar.gz;
         '''
 
