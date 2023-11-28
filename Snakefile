@@ -163,7 +163,12 @@ rule get_genomes:
 
 rule prepare_GTDB_genomes:
     input:
-        'GTDB/gtdb_genomes_reps_latest.tar.gz'
+        gtdb = 'GTDB/gtdb_genomes_reps_latest.tar.gz',
+        sheep_gz = 'GTDB/host_genomes/GCF_000298735.2_genomic.fna.gz',
+        cow_gz = 'GTDB/host_genomes/GCF_002263795.3_genomic.fna.gz',
+        goat_gz = 'GTDB/host_genomes/GCF_001704415.2_genomic.fna.gz',
+        deer_gz = 'GTDB/host_genomes/GCF_910594005.1_genomic.fna.gz',
+        wapiti_gz = 'GTDB/host_genomes/GCF_019320065.1_genomic.fna.gz',
     output:
         directory('GTDB/input_genomes')
     threads: 2
@@ -174,7 +179,7 @@ rule prepare_GTDB_genomes:
         '''
         mkdir GTDB/gtdb_genomes_reps_latest
 
-        tar -xvzf {input} -C GTDB/gtdb_genomes_reps_latest
+        tar -xvzf {input.gtdb} -C GTDB/gtdb_genomes_reps_latest
 
         mkdir -p {output}
 
