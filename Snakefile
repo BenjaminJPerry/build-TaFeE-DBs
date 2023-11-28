@@ -172,9 +172,11 @@ rule prepare_GTDB_genomes:
         time = lambda wildcards, attempt: attempt * 2 * 24 * 60
     shell:
         '''
-        tar -xvzf {input} -C GTDB/gtdb_genomes_reps_latest;
+        mkdir GTDB/gtdb_genomes_reps_latest
 
-        mkdir -p {output}; 
+        tar -xvzf {input} -C GTDB/gtdb_genomes_reps_latest
+
+        mkdir -p {output}
 
         find GTDB/gtdb_genomes_reps_latest -name "*.fna.gz" -exec mv -t {output}/ {{}} +;
 
