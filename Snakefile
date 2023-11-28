@@ -131,11 +131,11 @@ rule make_merged_taxonomy:
 rule get_genomes:
     output:
         gtd_genomes_gz='GTDB/gtdb_genomes_reps_latest.tar.gz',
-        sheep_gz = 'GTDB/host_genomes/GCF_000298735.2_genomic.fna.gz',
-        cow_gz = 'GTDB/host_genomes/GCF_002263795.3_genomic.fna.gz',
-        goat_gz = 'GTDB/host_genomes/GCF_001704415.2_genomic.fna.gz',
-        deer_gz = 'GTDB/host_genomes/GCF_910594005.1_genomic.fna.gz',
-        wapiti_gz = 'GTDB/host_genomes/GCF_019320065.1_genomic.fna.gz',
+        sheep_gz = 'GTDB/host_genomes/RS_GCF_000298735.2_genomic.fna.gz',
+        cow_gz = 'GTDB/host_genomes/RS_GCF_002263795.3_genomic.fna.gz',
+        goat_gz = 'GTDB/host_genomes/RS_GCF_001704415.2_genomic.fna.gz',
+        deer_gz = 'GTDB/host_genomes/RS_GCF_910594005.1_genomic.fna.gz',
+        wapiti_gz = 'GTDB/host_genomes/RS_GCF_019320065.1_genomic.fna.gz',
     threads: 2
     resources:
         partition='compute'
