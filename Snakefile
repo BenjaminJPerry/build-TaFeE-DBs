@@ -185,7 +185,7 @@ rule prepare_GTDB_genomes:
         '''
 
 
-rule prepKraken2Build:
+rule prepare_kraken2_genomes:
     input:
         genomes='GTDB/input_genomes',
         taxonomy='GTDB/merged_taxonomy.tsv',
