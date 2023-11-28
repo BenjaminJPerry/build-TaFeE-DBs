@@ -151,12 +151,14 @@ rule get_genomes:
     shell:
         '''
         mkdir -p GTDB/host_genomes
-        wget -c -O {output.gtd_genomes_gz} {params.gtdbGenomes};
+
         wget -c -O {output.sheep_gz} {params.sheep};
         wget -c -O {output.cow_gz} {params.cow};
         wget -c -O {output.goat_gz} {params.goat};
         wget -c -O {output.deer_gz} {params.deer};
         wget -c -O {output.wapiti_gz} {params.wapiti};
+
+        wget -c -O {output.gtd_genomes_gz} {params.gtdbGenomes};
 
         '''
 
@@ -177,14 +179,12 @@ rule prepare_GTDB_genomes:
         time = lambda wildcards, attempt: attempt * 2 * 24 * 60
     shell:
         '''
-        mkdir GTDB/gtdb_genomes_reps_latest
-
-        tar -xvzf {input.gtdb} -C GTDB/gtdb_genomes_reps_latest
 
         mkdir -p {output}
-
         find GTDB/host_genomes -name "*.fna.gz" -exec mv -t {output}/ {{}} +;
 
+        mkdir GTDB/gtdb_genomes_reps_latest
+        tar -xvzf {input.gtdb} -C GTDB/gtdb_genomes_reps_latest
         find GTDB/gtdb_genomes_reps_latest -name "*.fna.gz" -exec mv -t {output}/ {{}} +;
 
         '''
