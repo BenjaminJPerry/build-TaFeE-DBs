@@ -25,7 +25,7 @@ rule targets:
     input:
         'GTDB/kraken2-GTDB-214.1/hash.k2d',
         'GTDB/merged_metadata.tsv',
-        'K2NT-20230205'
+        'K2NT-20230205/hash.k2d',
         #'biobakery/...' #TODO
 
 
@@ -231,14 +231,15 @@ rule prepare_kraken2_build:
         mem_gb = lambda wildcards, attempt: attempt * 24
     shell:
         '''
+        mkdir -p GTDB/kraken2-GTDB-214.1/taxonomy
+        mv {input.nodes} GTDB/kraken2-GTDB-214.1/taxonomy/{input.nodes}
+        mv {input.names} GTDB/kraken2-GTDB-214.1/taxonomy/{input.names}
+
         for file in $(ls {input.genomes});
         do
             kraken2-build --threads {threads} --add-to-library {input.genomes}/$file --db GTDB/kraken2-GTDB-214.1
         done
 
-        mkdir -p GTDB/kraken2-GTDB-214.1/taxonomy
-        mv {input.nodes} GTDB/kraken2-GTDB-214.1/taxonomy/{input.nodes}
-        mv {input.names} GTDB/kraken2-GTDB-214.1/taxonomy/{input.names}
 
         '''
 
@@ -265,7 +266,7 @@ rule build_kraken2:
 
 rule kraken2_prebuilt_ntdb:
     output:
-        directory('K2NT-20230205')
+        'K2NT-20230205/hash.k2d'
     threads: 2
     resources:
         partition='compute'
@@ -274,7 +275,8 @@ rule kraken2_prebuilt_ntdb:
     shell:
         '''
         wget -c -O K2NT-20230205.tar.gz {params.k2_prebuilt_nt};
-        tar -xvzf K2NT-20230205.tar.gz;
+        mkdir K2NT-20230205
+        tar -xvzf K2NT-20230205.tar.gz -C K2NT-20230205
         '''
 
 
