@@ -233,8 +233,8 @@ rule prepare_kraken2_build:
         '''
         mkdir -p GTDB/kraken2-GTDB-214.1/taxonomy
 
-        cp {input.nodes} GTDB/kraken2-GTDB-214.1/taxonomy/{input.nodes}
-        cp {input.names} GTDB/kraken2-GTDB-214.1/taxonomy/{input.names}
+        cp {input.nodes} GTDB/kraken2-GTDB-214.1/taxonomy/nodes.dmp
+        cp {input.names} GTDB/kraken2-GTDB-214.1/taxonomy/names.dmp
 
         for file in $(ls {input.genomes});
         do
