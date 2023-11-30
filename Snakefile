@@ -232,8 +232,9 @@ rule prepare_kraken2_build:
     shell:
         '''
         mkdir -p GTDB/kraken2-GTDB-214.1/taxonomy
-        mv {input.nodes} GTDB/kraken2-GTDB-214.1/taxonomy/{input.nodes}
-        mv {input.names} GTDB/kraken2-GTDB-214.1/taxonomy/{input.names}
+
+        cp {input.nodes} GTDB/kraken2-GTDB-214.1/taxonomy/{input.nodes}
+        cp {input.names} GTDB/kraken2-GTDB-214.1/taxonomy/{input.names}
 
         for file in $(ls {input.genomes});
         do
@@ -275,7 +276,7 @@ rule kraken2_prebuilt_ntdb:
     shell:
         '''
         wget -c -O K2NT-20230205.tar.gz {params.k2_prebuilt_nt};
-        mkdir K2NT-20230205
+        mkdir -p K2NT-20230205
         tar -xvzf K2NT-20230205.tar.gz -C K2NT-20230205
         '''
 
