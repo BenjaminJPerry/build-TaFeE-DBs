@@ -287,7 +287,6 @@ rule prepare_kraken2_host_genomes:
         deer=config['deer-genome'],
         wapiti=config['wapiti-genome'],
     shell:
-
         '''
         mkdir -p GTDB/host_genomes
 
