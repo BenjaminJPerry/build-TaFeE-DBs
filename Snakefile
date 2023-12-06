@@ -26,7 +26,7 @@ rule targets:
         'GTDB/kraken2-GTDB-214.1/hash.k2d',
         'GTDB/merged_metadata.tsv',
         'K2NT-20230205/hash.k2d',
-        #'biobakery/...' #TODO
+        'GTDB/kraken2-hosts/hash.k2d',
 
 
 ### Prepare ###
@@ -261,6 +261,95 @@ rule build_kraken2:
     shell:
         '''
         kraken2-build --build --threads {threads} --db GTDB/kraken2-GTDB-214.1
+
+        '''
+
+
+rule prepare_kraken2_host_genomes:
+    input:
+        host_taxonomy='resources/eukaryotic_taxa.tsv',
+        tax_from_gtdb='workflow/scripts/tax_from_gtdb.py'
+    output:
+        genomes_out = directory('GTDB/kraken_host_genomes'),
+        nodes = 'GTDB/nodes.host.dmp',
+        names = 'GTDB/names.host.dmp'
+    conda:
+        'kraken2'
+    threads: 2
+    resources:
+        partition='compute',
+        time = lambda wildcards, attempt: attempt * 7 * 24 * 60,
+    params:
+        gtdbGenomes=config['gtdb-genomes'],
+        sheep=config['sheep-genome'],
+        cow=config['cow-genome'],
+        goat=config['goat-genome'],
+        deer=config['deer-genome'],
+        wapiti=config['wapiti-genome'],
+    shell:
+
+        '''
+        mkdir -p GTDB/host_genomes
+
+        wget -c -O {output.sheep_gz} {params.sheep};
+        wget -c -O {output.cow_gz} {params.cow};
+        wget -c -O {output.goat_gz} {params.goat};
+        wget -c -O {output.deer_gz} {params.deer};
+        wget -c -O {output.wapiti_gz} {params.wapiti};
+
+
+        python {input.tax_from_gtdb} --gtdb {input.host_taxonomy} --assemblies GTDB/host_genomes --nodes {output.nodes} --names {output.names} --kraken_dir {output.genomes_out}
+
+        '''
+
+
+rule prepare_kraken2_hosts_build:
+    input:
+        genomes = 'GTDB/kraken_host_genomes',
+        nodes = 'GTDB/nodes.host.dmp',
+        names = 'GTDB/names.host.dmp'
+    output:
+        names_prep = 'GTDB/kraken2-hosts/taxonomy/names.dmp',
+        nodes_prep = 'GTDB/kraken2-hosts/taxonomy/nodes.dmp',
+    conda:
+        'kraken2'
+    threads: 16
+    resources:
+        partition='compute',
+        time = lambda wildcards, attempt: attempt * 5 * 24 * 60,
+        mem_gb = lambda wildcards, attempt: attempt * 24
+    shell:
+        '''
+        mkdir -p GTDB/kraken2-hosts/taxonomy
+
+        cp {input.nodes} GTDB/kraken2-hosts/taxonomy/nodes.dmp
+        cp {input.names} GTDB/kraken2-hosts/taxonomy/names.dmp
+
+        for file in $(ls {input.genomes});
+        do
+            kraken2-build --threads {threads} --add-to-library {input.genomes}/$file --db GTDB/kraken2-hosts
+        done
+
+
+        '''
+
+
+rule build_kraken2_hosts:
+    input:
+        names_prep = 'GTDB/kraken2-hosts/taxonomy/names.dmp',
+        nodes_prep = 'GTDB/kraken2-hosts/taxonomy/nodes.dmp',
+    output:
+        kraken2_index = 'GTDB/kraken2-hosts/hash.k2d',
+    conda:
+        'kraken2'
+    threads: 64
+    resources:
+        partition='hugemem',
+        time = lambda wildcards, attempt: attempt * 24 * 60,
+        mem_gb = lambda wildcards, attempt: attempt * 1600
+    shell:
+        '''
+        kraken2-build --build --threads {threads} --db GTDB/kraken2-hosts
 
         '''
 
