@@ -1,2 +1,2 @@
-# build-GTDB-DBs
-snakemake workflow to automate building GTDB reference database for different utilities
+# build-TaFFE-DBs
+A reproducible workflow designed to download and build release of the GTDB database. Additionally it downloads host genomes, and builds them into a GTDB kraken2 index, and a host-specific kraken2 index for host read depletion. It will also pull the latest kraken2 prebuilt realease of the NCBI nt collection for profiling. Future improvments will included downloading the necessary functional databases needed for running humann3, currently this is done mannually at the time of porting over the pipeline to a new system. Building of bowtie indices for Kneaddata is also done mannual at this point in time for the SILVA rRNA database.
