@@ -272,7 +272,7 @@ rule prepare_kraken2_host_genomes:
     output:
         genomes_out = directory('GTDB/kraken_host_genomes'),
         nodes = 'GTDB/nodes.host.dmp',
-        names = 'GTDB/names.host.dmp'
+        names = 'GTDB/names.host.dmp',
     conda:
         'kraken2'
     threads: 2
@@ -290,11 +290,11 @@ rule prepare_kraken2_host_genomes:
         '''
         mkdir -p GTDB/host_genomes
 
-        wget -c -O {output.sheep_gz} {params.sheep};
-        wget -c -O {output.cow_gz} {params.cow};
-        wget -c -O {output.goat_gz} {params.goat};
-        wget -c -O {output.deer_gz} {params.deer};
-        wget -c -O {output.wapiti_gz} {params.wapiti};
+        wget -c -O GTDB/host_genomes/GCF_000298735.2_genomic.fna.gz {params.sheep};
+        wget -c -O GTDB/host_genomes/GCF_002263795.3_genomic.fna.gz {params.cow};
+        wget -c -O GTDB/host_genomes/GCF_001704415.2_genomic.fna.gz {params.goat};
+        wget -c -O GTDB/host_genomes/GCF_910594005.1_genomic.fna.gz {params.deer};
+        wget -c -O GTDB/host_genomes/GCF_019320065.1_genomic.fna.gz {params.wapiti};
 
 
         python {input.tax_from_gtdb} --gtdb {input.host_taxonomy} --assemblies GTDB/host_genomes --nodes {output.nodes} --names {output.names} --kraken_dir {output.genomes_out}
