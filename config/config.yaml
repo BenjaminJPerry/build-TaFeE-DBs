@@ -18,7 +18,7 @@ gtdb-arc-metadata: https://data.ace.uq.edu.au/public/gtdb/data/releases/release2
 
 
 # host genomes
-sheep-genome: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/298/735/GCF_000298735.2_Oar_v4.0/GCF_000298735.2_Oar_v4.0_genomic.fna.gz
+sheep-genome: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/772/045/GCF_016772045.2_ARS-UI_Ramb_v3.0/GCF_016772045.2_ARS-UI_Ramb_v3.0_genomic.fna.gz
 cow-genome: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/002/263/795/GCF_002263795.3_ARS-UCD2.0/GCF_002263795.3_ARS-UCD2.0_genomic.fna.gz
 goat-genome: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/704/415/GCF_001704415.2_ARS1.2/GCF_001704415.2_ARS1.2_genomic.fna.gz
 deer-genome: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/910/594/005/GCF_910594005.1_mCerEla1.1/GCF_910594005.1_mCerEla1.1_genomic.fna.gz
