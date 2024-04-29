@@ -25,7 +25,7 @@ rule targets:
     input:
         'GTDB/kraken2-GTDB-214.1/hash.k2d',
         'GTDB/merged_metadata.tsv',
-        'K2NT-20230205/hash.k2d',
+        #'K2NT-20230205/hash.k2d',
         'GTDB/kraken2-hosts/hash.k2d',
 
 
