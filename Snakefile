@@ -131,7 +131,7 @@ rule make_merged_taxonomy:
 rule get_genomes:
     output:
         gtd_genomes_gz= protected('GTDB/gtdb_genomes_reps_latest.tar.gz'),
-        sheep_gz = protected('GTDB/host_genomes/GCF_000298735.2_genomic.fna.gz'),
+        sheep_gz = protected('GTDB/host_genomes/GCF_016772045.2_genomic.fna.gz'),
         cow_gz = protected('GTDB/host_genomes/GCF_002263795.3_genomic.fna.gz'),
         goat_gz = protected('GTDB/host_genomes/GCF_001704415.2_genomic.fna.gz'),
         deer_gz = protected('GTDB/host_genomes/GCF_910594005.1_genomic.fna.gz'),
@@ -166,7 +166,7 @@ rule get_genomes:
 rule prepare_GTDB_genomes:
     input:
         gtdb = 'GTDB/gtdb_genomes_reps_latest.tar.gz',
-        sheep_gz = 'GTDB/host_genomes/GCF_000298735.2_genomic.fna.gz',
+        sheep_gz = 'GTDB/host_genomes/GCF_016772045.2_genomic.fna.gz',
         cow_gz = 'GTDB/host_genomes/GCF_002263795.3_genomic.fna.gz',
         goat_gz = 'GTDB/host_genomes/GCF_001704415.2_genomic.fna.gz',
         deer_gz = 'GTDB/host_genomes/GCF_910594005.1_genomic.fna.gz',
@@ -290,7 +290,7 @@ rule prepare_kraken2_host_genomes:
         '''
         mkdir -p GTDB/host_genomes
 
-        wget -c -O GTDB/host_genomes/GCF_000298735.2_genomic.fna.gz {params.sheep};
+        wget -c -O GTDB/host_genomes/GCF_016772045.2_genomic.fna.gz {params.sheep};
         wget -c -O GTDB/host_genomes/GCF_002263795.3_genomic.fna.gz {params.cow};
         wget -c -O GTDB/host_genomes/GCF_001704415.2_genomic.fna.gz {params.goat};
         wget -c -O GTDB/host_genomes/GCF_910594005.1_genomic.fna.gz {params.deer};
