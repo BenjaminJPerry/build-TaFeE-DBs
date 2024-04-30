@@ -140,7 +140,7 @@ rule get_genomes:
     resources:
         partition='compute'
     resources:
-        time = lambda wildcards, attempt: attempt * 7 * 24 * 60
+        time = lambda wildcards, attempt: attempt * 1 * 24 * 60
     params:
         gtdbGenomes=config['gtdb-genomes'],
         sheep=config['sheep-genome'],
@@ -176,7 +176,7 @@ rule prepare_GTDB_genomes:
     threads: 2
     resources:
         partition='compute',
-        time = lambda wildcards, attempt: attempt * 2 * 24 * 60
+        time = lambda wildcards, attempt: attempt * 1 * 24 * 60
     shell:
         '''
 
@@ -204,7 +204,7 @@ rule prepare_kraken2_genomes:
     threads: 2
     resources:
         partition='compute',
-        time = lambda wildcards, attempt: attempt * 2 * 24 * 60,
+        time = lambda wildcards, attempt: attempt * 3 * 24 * 60,
     shell:
         '''
         python {input.tax_from_gtdb} --gtdb {input.taxonomy} --assemblies {input.genomes} --nodes {output.nodes} --names {output.names} --kraken_dir {output.genomes_out} &&
@@ -258,7 +258,7 @@ rule build_kraken2:
         'benchmark/build_kraken2.txt'
     resources:
         partition='hugemem',
-        time = lambda wildcards, attempt: attempt * 24 * 60,
+        time = lambda wildcards, attempt: attempt * 2 * 24 * 60,
         mem_gb = lambda wildcards, attempt: attempt * 1600
     shell:
         '''
