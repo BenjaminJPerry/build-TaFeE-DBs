@@ -254,6 +254,8 @@ rule build_kraken2:
     conda:
         'kraken2'
     threads: 64
+    benchmark:
+        'benchmark/build_kraken2.txt'
     resources:
         partition='hugemem',
         time = lambda wildcards, attempt: attempt * 24 * 60,
@@ -343,6 +345,8 @@ rule build_kraken2_hosts:
     conda:
         'kraken2'
     threads: 64
+    benchmark:
+        'benchmark/build_kraken2_hosts.txt'
     resources:
         partition='hugemem',
         time = lambda wildcards, attempt: attempt * 24 * 60,
