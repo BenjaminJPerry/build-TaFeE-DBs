@@ -278,6 +278,7 @@ rule prepare_kraken2_host_genomes:
     threads: 2
     resources:
         partition='compute',
+        mem_gb = lambda wildcards, attempt: attempt * 16,
         time = lambda wildcards, attempt: attempt * 7 * 24 * 60,
     params:
         gtdbGenomes=config['gtdb-genomes'],
