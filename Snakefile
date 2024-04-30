@@ -281,7 +281,7 @@ rule prepare_kraken2_host_genomes:
     resources:
         partition='compute',
         mem_gb = lambda wildcards, attempt: attempt * 16,
-        time = lambda wildcards, attempt: attempt * 7 * 24 * 60,
+        time = lambda wildcards, attempt: attempt * 2 * 24 * 60,
     params:
         gtdbGenomes=config['gtdb-genomes'],
         sheep=config['sheep-genome'],
@@ -318,7 +318,7 @@ rule prepare_kraken2_hosts_build:
     threads: 16
     resources:
         partition='compute',
-        time = lambda wildcards, attempt: attempt * 5 * 24 * 60,
+        time = lambda wildcards, attempt: attempt * 2 * 24 * 60,
         mem_gb = lambda wildcards, attempt: attempt * 24
     shell:
         '''
@@ -354,7 +354,6 @@ rule build_kraken2_hosts:
     shell:
         '''
         kraken2-build --build --threads {threads} --db GTDB/kraken2-hosts
-
         '''
 
 
