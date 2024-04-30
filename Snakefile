@@ -41,7 +41,7 @@ rule get_GTDB_bac_metadata:
     shell:
         '''
         mkdir -p GTDB
-        wget -c -O GTDB/bac120_metadata_latest.tsv.gz {params.bacMeta};
+        curl -o GTDB/bac120_metadata_latest.tsv.gz {params.bacMeta};
         gunzip -c GTDB/bac120_metadata_latest.tsv.gz > {output.bac120Metadata};
         '''
 
@@ -57,7 +57,7 @@ rule get_GTDB_arc_metadata:
     shell:
         '''
         mkdir -p GTDB
-        wget -c -O GTDB/ar53_metadata_latest.tsv.gz {params.arcMeta};
+        curl -o GTDB/ar53_metadata_latest.tsv.gz {params.arcMeta};
         gunzip -c GTDB/ar53_metadata_latest.tsv.gz > {output.arc53Metadata};
         '''
 
@@ -89,7 +89,7 @@ rule get_GTDB_bac_tax:
     shell:
         '''
         mkdir -p GTDB
-        wget -c -O GTDB/bac120_taxonomy_latest.tsv.gz {params.gtdbBacTax};
+        curl -o GTDB/bac120_taxonomy_latest.tsv.gz {params.gtdbBacTax};
         gunzip -c GTDB/bac120_taxonomy_latest.tsv.gz > {output.bacTax};
         '''
 
@@ -105,7 +105,7 @@ rule get_GTDB_arc_tax:
     shell:
         '''
         mkdir -p GTDB
-        wget -c -O GTDB/ar53_taxonomy_latest.tsv.gz {params.gtdbArcTax};
+        curl -o GTDB/ar53_taxonomy_latest.tsv.gz {params.gtdbArcTax};
         gunzip -c GTDB/ar53_taxonomy_latest.tsv.gz > {output.arcTax};
         '''
 
@@ -152,13 +152,13 @@ rule get_genomes:
         '''
         mkdir -p GTDB/host_genomes
 
-        curl -O {output.sheep_gz} {params.sheep};
-        curl -O {output.cow_gz} {params.cow};
-        curl -O {output.goat_gz} {params.goat};
-        curl -O {output.deer_gz} {params.deer};
-        curl -O {output.wapiti_gz} {params.wapiti};
+        curl -o {output.sheep_gz} {params.sheep};
+        curl -o {output.cow_gz} {params.cow};
+        curl -o {output.goat_gz} {params.goat};
+        curl -o {output.deer_gz} {params.deer};
+        curl -o {output.wapiti_gz} {params.wapiti};
 
-        curl -O {output.gtd_genomes_gz} {params.gtdbGenomes};
+        curl -o {output.gtd_genomes_gz} {params.gtdbGenomes};
 
         '''
 
@@ -291,11 +291,11 @@ rule prepare_kraken2_host_genomes:
         '''
         mkdir -p GTDB/host_genomes
 
-        curl -O GTDB/host_genomes/GCF_016772045.2_genomic.fna.gz {params.sheep};
-        curl -O GTDB/host_genomes/GCF_002263795.3_genomic.fna.gz {params.cow};
-        curl -O GTDB/host_genomes/GCF_001704415.2_genomic.fna.gz {params.goat};
-        curl -O GTDB/host_genomes/GCF_910594005.1_genomic.fna.gz {params.deer};
-        curl -O GTDB/host_genomes/GCF_019320065.1_genomic.fna.gz {params.wapiti};
+        curl -o GTDB/host_genomes/GCF_016772045.2_genomic.fna.gz {params.sheep};
+        curl -o GTDB/host_genomes/GCF_002263795.3_genomic.fna.gz {params.cow};
+        curl -o GTDB/host_genomes/GCF_001704415.2_genomic.fna.gz {params.goat};
+        curl -o GTDB/host_genomes/GCF_910594005.1_genomic.fna.gz {params.deer};
+        curl -o GTDB/host_genomes/GCF_019320065.1_genomic.fna.gz {params.wapiti};
 
 
         python {input.tax_from_gtdb} --gtdb {input.host_taxonomy} --assemblies GTDB/host_genomes --nodes {output.nodes} --names {output.names} --kraken_dir {output.genomes_out}
@@ -365,7 +365,7 @@ rule kraken2_prebuilt_ntdb:
         k2_prebuilt_nt = config['k2nt']
     shell:
         '''
-        curl -O K2NT-20230205.tar.gz {params.k2_prebuilt_nt};
+        curl -o K2NT-20230205.tar.gz {params.k2_prebuilt_nt};
         mkdir -p K2NT-20230205
         tar -xvzf K2NT-20230205.tar.gz -C K2NT-20230205
         '''
