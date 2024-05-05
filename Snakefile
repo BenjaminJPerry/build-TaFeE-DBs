@@ -228,7 +228,7 @@ rule prepare_kraken2_build:
     resources:
         partition='compute',
         time = lambda wildcards, attempt: attempt * 5 * 24 * 60,
-        mem_gb = lambda wildcards, attempt: attempt * 128
+        mem_gb = lambda wildcards, attempt: attempt * 32
     shell:
         '''
         mkdir -p GTDB/kraken2-GTDB-214.1/taxonomy
