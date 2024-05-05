@@ -224,11 +224,11 @@ rule prepare_kraken2_build:
         nodes_prep = 'GTDB/kraken2-GTDB-214.1/taxonomy/nodes.dmp',
     conda:
         'kraken2'
-    threads: 16
+    threads: 32
     resources:
         partition='compute',
         time = lambda wildcards, attempt: attempt * 5 * 24 * 60,
-        mem_gb = lambda wildcards, attempt: attempt * 24
+        mem_gb = lambda wildcards, attempt: attempt * 128
     shell:
         '''
         mkdir -p GTDB/kraken2-GTDB-214.1/taxonomy
@@ -258,7 +258,7 @@ rule build_kraken2:
         'benchmark/build_kraken2.txt'
     resources:
         partition='hugemem',
-        time = lambda wildcards, attempt: attempt * 2 * 24 * 60,
+        time = lambda wildcards, attempt: attempt * 5 * 24 * 60,
         mem_gb = lambda wildcards, attempt: attempt * 1600
     shell:
         '''
