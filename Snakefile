@@ -205,6 +205,8 @@ rule get_genomes:
     shell:
         '''
         mkdir -p GTDB/host_genomes
+        mkdir -p GTDB/protist_genomes
+        mkdir -p GTDB/fungi_genomes
 
         curl -o {output.sheep_gz} {params.sheep};
         curl -o {output.cow_gz} {params.cow};
