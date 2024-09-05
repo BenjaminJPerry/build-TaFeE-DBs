@@ -226,7 +226,7 @@ rule get_genomes:
         curl -o {output.Isotricha_YL_2021a_gz} {params.Isotricha_YL_2021a};
         curl -o {output.Isotricha_YL_2021b_gz} {params.Isotricha_YL_2021b};
         curl -o {output.Dasytricha_ruminantium_gz} {params.Dasytricha_ruminantium};
-        curl -o {output.Ophryoscolex_caudatus_gz} {params.Ophryoscolex_caudatus};;
+        curl -o {output.Ophryoscolex_caudatus_gz} {params.Ophryoscolex_caudatus};
         curl -o {output.Polyplastron_multivesiculatum_gz} {params.Polyplastron_multivesiculatum};
         curl -o {output.Eremoplastron_rostratum_gz} {params.Eremoplastron_rostratum};
         curl -o {output.Ostracodinium_gracile_gz} {params.Ostracodinium_gracile};
