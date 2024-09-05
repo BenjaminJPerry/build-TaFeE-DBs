@@ -130,7 +130,7 @@ rule make_merged_taxonomy:
 
 rule get_genomes:
     output:
-        gtd_genomes_gz= protected('GTDB/gtdb_genomes_reps_latest.tar.gz'),
+        gtdb_genomes_gz= protected('GTDB/gtdb_genomes_reps_latest.tar.gz'),
         sheep_gz = protected('GTDB/host_genomes/GCF_016772045.2_genomic.fna.gz'),
         cow_gz = protected('GTDB/host_genomes/GCF_002263795.3_genomic.fna.gz'),
         goat_gz = protected('GTDB/host_genomes/GCF_001704415.2_genomic.fna.gz'),
@@ -240,14 +240,14 @@ rule get_genomes:
         curl -o {output.Piromyces_SIG733_gz} {params.Piromyces_SIG733};
         curl -o {output.Orpinomyces_sp_gz} {params.Orpinomyces_sp};
 
-        curl -o {output.gtd_genomes_gz} {params.gtdbGenomes};
+        curl -o {output.gtdb_genomes_gz} {params.gtdbGenomes};
 
         '''
 
 
 rule prepare_GTDB_genomes:
     input:
-        gtd_genomes_gz= 'GTDB/gtdb_genomes_reps_latest.tar.gz',
+        gtdb= 'GTDB/gtdb_genomes_reps_latest.tar.gz',
         sheep_gz = 'GTDB/host_genomes/GCF_016772045.2_genomic.fna.gz',
         cow_gz = 'GTDB/host_genomes/GCF_002263795.3_genomic.fna.gz',
         goat_gz = 'GTDB/host_genomes/GCF_001704415.2_genomic.fna.gz',
