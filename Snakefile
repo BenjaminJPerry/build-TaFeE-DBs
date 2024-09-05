@@ -151,7 +151,7 @@ rule get_genomes:
         Ophryoscolex_caudatus_gz = protected('GTDB/protist_genomes/GCA_023806825.1_genomic.fna.gz'),
         Polyplastron_multivesiculatum_gz= protected('GTDB/protist_genomes/GCA_023783355.1_genomic.fna.gz'),
         Eremoplastron_rostratum_gz = protected('GTDB/protist_genomes/GCA_023805755.1_genomic.fna.gz'),
-        Ostracodinium_gracile_gz = protected('GTDB/protist_genomes/GCA_023805525.1_genomic.fna.gz'),
+        Ostracodinium_gracile_gz = protected('GTDB/protist_genomes/GCA_023805685.1_genomic.fna.gz'),
         Metadinium_minorum_gz = protected('GTDB/protist_genomes/GCA_023807265.1_genomic.fna.gz'),
         Enoploplastron_triloricatum_gz = protected('GTDB/protist_genomes/GCA_023783335.1_genomic.fna.gz'),
         Ostracodinium_dentatum_gz = protected('GTDB/protist_genomes/GCA_023805525.1_genomic.fna.gz'),
