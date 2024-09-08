@@ -384,7 +384,7 @@ rule build_kraken2:
 
 rule prepare_kraken2_host_genomes:
     input:
-        host_taxonomy='resources/eukaryotic_taxa.tsv',
+        host_taxonomy='resources/host_taxa.tsv',
         tax_from_gtdb='workflow/scripts/tax_from_gtdb.py'
     output:
         genomes_out = directory('GTDB/kraken_host_genomes'),
