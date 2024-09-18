@@ -390,6 +390,8 @@ rule prepare_kraken2_host_genomes:
         genomes_out = directory('GTDB/kraken_host_genomes'),
         nodes = 'GTDB/nodes.host.dmp',
         names = 'GTDB/names.host.dmp',
+    conda:
+        'kraken2'
     threads: 2
     resources:
         partition='compute',
