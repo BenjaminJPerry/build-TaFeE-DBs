@@ -1,24 +1,21 @@
 # Configuration file for building GTDB based taxonomic and functional databases
 
 # archive of representative genomes
-#gtdb-genomes: https://data.ace.uq.edu.au/public/gtdb/data/releases/release207/207.0/genomic_files_reps/gtdb_genomes_reps_r207.tar.gz
-#gtdb-genomes: https://data.ace.uq.edu.au/public/gtdb/data/releases/release214/214.1/genomic_files_reps/gtdb_genomes_reps_r214.tar.gz
-gtdb-genomes: https://data.ace.uq.edu.au/public/gtdb/data/releases/release220/220.0/genomic_files_reps/gtdb_genomes_reps_r220.tar.gz
+gtdb-genomes: https://data.ace.uq.edu.au/public/gtdb/data/releases/release214/214.1/genomic_files_reps/gtdb_genomes_reps_r214.tar.gz
+# gtdb-genomes: https://data.ace.uq.edu.au/public/gtdb/data/releases/release220/220.0/genomic_files_reps/gtdb_genomes_reps_r220.tar.gz
 
 # taxonomic summary files
-# gtdb-bac-tax: https://data.ace.uq.edu.au/public/gtdb/data/releases/release207/207.0/bac120_taxonomy_r207.tsv.gz
-# gtdb-arc-tax: https://data.ace.uq.edu.au/public/gtdb/data/releases/release207/207.0/ar53_taxonomy_r207.tsv.gz
-# gtdb-bac-tax: https://data.ace.uq.edu.au/public/gtdb/data/releases/release214/214.1/bac120_taxonomy_r214.tsv.gz
-# gtdb-arc-tax: https://data.ace.uq.edu.au/public/gtdb/data/releases/release214/214.1/ar53_taxonomy_r214.tsv.gz
-gtdb-bac-tax: https://data.ace.uq.edu.au/public/gtdb/data/releases/release220/220.0/bac120_taxonomy_r220.tsv.gz
-gtdb-arc-tax: https://data.ace.uq.edu.au/public/gtdb/data/releases/release220/220.0/ar53_taxonomy_r220.tsv.gz
+gtdb-bac-tax: https://data.ace.uq.edu.au/public/gtdb/data/releases/release214/214.1/bac120_taxonomy_r214.tsv.gz
+gtdb-arc-tax: https://data.ace.uq.edu.au/public/gtdb/data/releases/release214/214.1/ar53_taxonomy_r214.tsv.gz
+# gtdb-bac-tax: https://data.ace.uq.edu.au/public/gtdb/data/releases/release220/220.0/bac120_taxonomy_r220.tsv.gz
+# gtdb-arc-tax: https://data.ace.uq.edu.au/public/gtdb/data/releases/release220/220.0/ar53_taxonomy_r220.tsv.gz
 
 
 # genome metadata for filtering accessions
-# gtdb-bac-metadata: https://data.ace.uq.edu.au/public/gtdb/data/releases/release214/214.1/bac120_metadata_r214.tsv.gz
-# gtdb-arc-metadata: https://data.ace.uq.edu.au/public/gtdb/data/releases/release214/214.1/ar53_metadata_r214.tsv.gz
-gtdb-bac-metadata: https://data.ace.uq.edu.au/public/gtdb/data/releases/release220/220.0/bac120_metadata_r220.tsv.gz
-gtdb-arc-metadata: https://data.ace.uq.edu.au/public/gtdb/data/releases/release220/220.0/ar53_metadata_r220.tsv.gz
+gtdb-bac-metadata: https://data.ace.uq.edu.au/public/gtdb/data/releases/release214/214.1/bac120_metadata_r214.tsv.gz
+gtdb-arc-metadata: https://data.ace.uq.edu.au/public/gtdb/data/releases/release214/214.1/ar53_metadata_r214.tsv.gz
+# gtdb-bac-metadata: https://data.ace.uq.edu.au/public/gtdb/data/releases/release220/220.0/bac120_metadata_r220.tsv.gz
+# gtdb-arc-metadata: https://data.ace.uq.edu.au/public/gtdb/data/releases/release220/220.0/ar53_metadata_r220.tsv.gz
 
 
 # Host genomes
@@ -28,45 +25,3 @@ goat-genome: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/704/415/GCF_001704
 deer-genome: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/910/594/005/GCF_910594005.1_mCerEla1.1/GCF_910594005.1_mCerEla1.1_genomic.fna.gz
 wapiti-genome: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/019/320/065/GCF_019320065.1_ASM1932006v1/GCF_019320065.1_ASM1932006v1_genomic.fna.gz
 
-
-# Protists
-Entodinium-caudatum: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/002/087/855/GCA_002087855.3_ASM208785v3/GCA_002087855.3_ASM208785v3_genomic.fna.gz
-Entodinium-longinucleatum: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/023/897/235/GCA_023897235.1_ASM2389723v1/GCA_023897235.1_ASM2389723v1_genomic.fna.gz
-Entodinium-bursa: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/023/807/345/GCA_023807345.1_ASM2380734v1/GCA_023807345.1_ASM2380734v1_genomic.fna.gz
-Epidinium-caudatum: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/023/807/225/GCA_023807225.1_ASM2380722v1/GCA_023807225.1_ASM2380722v1_genomic.fna.gz
-Epidinium-cattanei: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/023/805/625/GCA_023805625.1_ASM2380562v1/GCA_023805625.1_ASM2380562v1_genomic.fna.gz
-Diplodinium-dentatum: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/023/807/165/GCA_023807165.1_ASM2380716v1/GCA_023807165.1_ASM2380716v1_genomic.fna.gz
-Diplodinium-flabellum: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/023/806/845/GCA_023806845.1_ASM2380684v1/GCA_023806845.1_ASM2380684v1_genomic.fna.gz
-Isotricha-intestinalis: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/023/807/065/GCA_023807065.1_ASM2380706v1/GCA_023807065.1_ASM2380706v1_genomic.fna.gz
-Isotricha-prostoma: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/023/807/205/GCA_023807205.1_ASM2380720v1/GCA_023807205.1_ASM2380720v1_genomic.fna.gz
-Isotricha-YL-2021a: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/023/806/865/GCA_023806865.1_ASM2380686v1/GCA_023806865.1_ASM2380686v1_genomic.fna.gz
-Isotricha-YL-2021b: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/023/805/745/GCA_023805745.1_ASM2380574v1/GCA_023805745.1_ASM2380574v1_genomic.fna.gz
-Dasytricha-ruminantium: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/023/805/585/GCA_023805585.1_ASM2380558v1/GCA_023805585.1_ASM2380558v1_genomic.fna.gz
-Ophryoscolex-caudatus: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/023/806/825/GCA_023806825.1_ASM2380682v1/GCA_023806825.1_ASM2380682v1_genomic.fna.gz
-Polyplastron-multivesiculatum: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/023/783/355/GCA_023783355.1_ASM2378335v1/GCA_023783355.1_ASM2378335v1_genomic.fna.gz
-Eremoplastron-rostratum: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/023/805/755/GCA_023805755.1_ASM2380575v1/GCA_023805755.1_ASM2380575v1_genomic.fna.gz
-Ostracodinium-gracile: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/023/805/685/GCA_023805685.1_ASM2380568v1/GCA_023805685.1_ASM2380568v1_genomic.fna.gz
-Metadinium-minorum: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/023/807/265/GCA_023807265.1_ASM2380726v1/GCA_023807265.1_ASM2380726v1_genomic.fna.gz
-Enoploplastron-triloricatum: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/023/783/335/GCA_023783335.1_ASM2378333v1/GCA_023783335.1_ASM2378333v1_genomic.fna.gz
-Ostracodinium-dentatum: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/023/805/525/GCA_023805525.1_ASM2380552v1/GCA_023805525.1_ASM2380552v1_genomic.fna.gz
-
-# Fungi
-Anaeromyces-S4: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/002/104/895/GCA_002104895.1_Anaeromyces_sp._S4_v1.0/GCA_002104895.1_Anaeromyces_sp._S4_v1.0_genomic.fna.gz
-Caecomyces-SIG737: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/027/248/405/GCA_027248405.1_ASM2724840v1/GCA_027248405.1_ASM2724840v1_genomic.fna.gz
-Neocallimastix-californiae: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/002/104/975/GCA_002104975.1_Neocallimastix_sp._G1_v1.0/GCA_002104975.1_Neocallimastix_sp._G1_v1.0_genomic.fna.gz
-Neocallimastix-JGI-2020a: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/016/946/835/GCA_016946835.1_ASM1694683v1/GCA_016946835.1_ASM1694683v1_genomic.fna.gz
-Piromyces-finnis: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/002/104/945/GCA_002104945.1_Piromyces_sp._finnis_v3.0/GCA_002104945.1_Piromyces_sp._finnis_v3.0_genomic.fna.gz
-Piromyces-E2: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/002/157/105/GCA_002157105.1_PirspE2_v1.0/GCA_002157105.1_PirspE2_v1.0_genomic.fna.gz
-Piromyces-SIG733: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/027/248/865/GCA_027248865.1_ASM2724886v1/GCA_027248865.1_ASM2724886v1_genomic.fna.gz
-Orpinomyces-sp: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/412/615/GCA_000412615.1_Orpinomyces_sp._Strain_C1A/GCA_000412615.1_Orpinomyces_sp._Strain_C1A_genomic.fna.gz
-
-
-# No Genome
-# Protists
-#Eudiplodium-rostratum:
-#Eudiplodium-maggii:
-
-
-
-# public k2 prebuilts
-k2nt: https://genome-idx.s3.amazonaws.com/kraken/k2_nt_20230502.tar.gz
