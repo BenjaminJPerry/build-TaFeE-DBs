@@ -1,0 +1,5 @@
+.snakemake/
+GTDB/
+GTDB214_Rambv3/
+logs/
+benchmark/
