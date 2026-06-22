@@ -1,494 +1,453 @@
-# Copyright (c) 2023 Benjamin J Perry
-# Version: alpha
-# Maintainer: Benjamin J Perry
-# Email: ben.perry@agresearch.co.nz
-
-configfile: "config/config.yaml"
+# Copyright (c) 2023-2026 Benjamin J Perry
+# Generalized kraken2 build pipeline: user supplies (accessions.txt, optional GTDB release)
+# and the workflow auto-derives URLs, taxonomy, and a provenance-named output directory.
+#
+# Invoke with: snakemake --configfile config/config.yaml ...
+# (No default configfile is loaded — pass it explicitly to avoid accidental merges.)
 
 import os
+import sys
+from pathlib import Path
+
+if not config:
+    sys.exit("Error: no config loaded. Pass --configfile config/config.yaml (or config/test_config.yaml).")
+
+sys.path.insert(0, "workflow/scripts")
+from compute_db_name import read_accessions, canonical, compute_name
+from resolve_gtdb_urls import gtdb_urls
+
 
 onstart:
     print(f"Working directory: {os.getcwd()}")
-
-    print("TOOLS: ")
+    print("TOOLS:")
     os.system('echo "  bash: $(which bash)"')
     os.system('echo "  PYTHON: $(which python)"')
-    os.system('echo "  CONDA: $(which conda)"')
     os.system('echo "  SNAKEMAKE: $(which snakemake)"')
-    print(f"Env TMPDIR = {os.environ.get('TMPDIR', '<n/a>')}")
 
-    os.system('echo "  PYTHON VERSION: $(python --version)"')
-    os.system('echo "  CONDA VERSION: $(conda --version)"')
+
+OUTPUT_ROOT = config.get("output_root", "GTDB")
+DATABASES = config.get("databases", {})
+if not DATABASES:
+    sys.exit("Error: config must define a 'databases' dict")
+
+# DAG-time resolution: config-key -> (directory name, accessions list, gtdb URLs or None)
+DB_DIRS = {}
+DB_ACCESSIONS = {}
+DB_BY_DIR = {}
+DB_GTDB_URLS = {}
+DB_SPEC = {}
+
+for key, spec in DATABASES.items():
+    acc_path = Path(spec["supplemental_accessions"])
+    if not acc_path.exists():
+        sys.exit(f"Error: accessions file missing for db '{key}': {acc_path}")
+    accs = read_accessions(acc_path)
+    release = spec.get("gtdb_release")
+    label = spec.get("label", key)
+    name = spec.get("name_override") or compute_name(label, accs, release)
+    DB_DIRS[key] = name
+    DB_ACCESSIONS[key] = accs
+    DB_BY_DIR[name] = key
+    DB_GTDB_URLS[key] = gtdb_urls(str(release)) if release else None
+    DB_SPEC[key] = spec
+    print(f"  db '{key}' -> {OUTPUT_ROOT}/{name}  ({len(accs)} accessions, gtdb={release or 'none'})")
+
+
+def spec_of(db_dir: str):
+    return DB_SPEC[DB_BY_DIR[db_dir]]
+
+
+def accessions_of(db_dir: str):
+    return DB_ACCESSIONS[DB_BY_DIR[db_dir]]
+
+
+def has_gtdb(db_dir: str) -> bool:
+    return DB_GTDB_URLS[DB_BY_DIR[db_dir]] is not None
+
+
+def gtdb_url(db_dir: str, key: str) -> str:
+    urls = DB_GTDB_URLS[DB_BY_DIR[db_dir]]
+    if not urls:
+        sys.exit(f"db '{db_dir}' has no gtdb_release configured")
+    return urls[key]
+
+
+def res(db_dir: str, rule_key: str, field: str, default):
+    return spec_of(db_dir).get("resources", {}).get(rule_key, {}).get(field, default)
+
+
+def merged_tax_inputs(wildcards):
+    out = {"supp": f"{OUTPUT_ROOT}/{wildcards.db}/supplemental.taxonomy.tsv"}
+    if has_gtdb(wildcards.db):
+        out["bac"] = f"{OUTPUT_ROOT}/{wildcards.db}/gtdb/bac120_taxonomy.tsv"
+        out["arc"] = f"{OUTPUT_ROOT}/{wildcards.db}/gtdb/ar53_taxonomy.tsv"
+    return out
+
+
+wildcard_constraints:
+    db = r"kraken2-[A-Za-z0-9._-]+",
+    accession = r"(?:GCA|GCF)_\d{9}\.\d+",
 
 
 rule targets:
     input:
-        'GTDB/kraken2-GTDB-220.0/hash.k2d',
-        'GTDB/merged_metadata.tsv',
-        #'K2NT-20230205/hash.k2d',
-        'GTDB/kraken2-hosts/hash.k2d',
+        expand(f"{OUTPUT_ROOT}/{{db}}/hash.k2d", db=DB_DIRS.values()),
+        expand(f"{OUTPUT_ROOT}/{{db}}/MANIFEST.{{db}}.json", db=DB_DIRS.values()),
 
 
-### Prepare ###
-rule get_GTDB_bac_metadata:
+# ---- Supplemental taxonomy + URL resolution (always runs) -------------------
+
+# Shared taxdump dir (NCBI nodes.dmp/names.dmp/merged.dmp/delnodes.dmp) used by taxonkit
+# to resolve NCBI taxids into lineage strings. Downloaded once per output_root.
+TAXDUMP_DIR = f"{OUTPUT_ROOT}/_taxdump"
+
+
+rule download_taxdump:
     output:
-        bac120Metadata='GTDB/bac120_metadata_latest.tsv'
+        nodes=f"{TAXDUMP_DIR}/nodes.dmp",
+        names=f"{TAXDUMP_DIR}/names.dmp",
+        merged=f"{TAXDUMP_DIR}/merged.dmp",
+        delnodes=f"{TAXDUMP_DIR}/delnodes.dmp",
     threads: 2
-    params:
-        bacMeta=config['gtdb-bac-metadata']
-    resources:
-        partition='compute'
+    resources: mem_gb=4, time=60, partition="compute"
     shell:
-        '''
-        mkdir -p GTDB
-        curl -o GTDB/bac120_metadata_latest.tsv.gz {params.bacMeta};
-        gunzip -c GTDB/bac120_metadata_latest.tsv.gz > {output.bac120Metadata};
-        '''
+        """
+        mkdir -p {TAXDUMP_DIR}
+        curl -fsSL --retry 5 --retry-delay 15 \
+            -o {TAXDUMP_DIR}/taxdump.tar.gz \
+            https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz
+        tar -xzf {TAXDUMP_DIR}/taxdump.tar.gz -C {TAXDUMP_DIR} \
+            nodes.dmp names.dmp merged.dmp delnodes.dmp
+        rm -f {TAXDUMP_DIR}/taxdump.tar.gz
+        """
 
 
-rule get_GTDB_arc_metadata:
+rule fetch_supplemental_taxonomy:
     output:
-        arc53Metadata='GTDB/ar53_metadata_latest.tsv'
-    threads: 2
+        tax=f"{OUTPUT_ROOT}/{{db}}/supplemental.taxonomy.tsv",
+        urls=f"{OUTPUT_ROOT}/{{db}}/supplemental.urls.tsv",
+    input:
+        taxdump_nodes=f"{TAXDUMP_DIR}/nodes.dmp",
     params:
-        arcMeta=config['gtdb-arc-metadata']
+        accessions=lambda wc: spec_of(wc.db)["supplemental_accessions"],
+        prefix=lambda wc: f"{OUTPUT_ROOT}/{wc.db}/supplemental",
+        taxdump_dir=TAXDUMP_DIR,
+    threads: lambda wc: res(wc.db, "fetch_taxonomy", "threads", 2)
     resources:
-        partition='compute'
+        mem_gb=lambda wc: res(wc.db, "fetch_taxonomy", "mem_gb", 4),
+        time=lambda wc: res(wc.db, "fetch_taxonomy", "time", 120),
+        partition=lambda wc: res(wc.db, "fetch_taxonomy", "partition", "compute"),
+    conda: "workflow/env/ncbi_taxonkit.yaml"
     shell:
-        '''
-        mkdir -p GTDB
-        curl -o GTDB/ar53_metadata_latest.tsv.gz {params.arcMeta};
-        gunzip -c GTDB/ar53_metadata_latest.tsv.gz > {output.arc53Metadata};
-        '''
+        """
+        mkdir -p $(dirname {output.tax})
+        python workflow/scripts/ncbi_to_gtdb_taxonomy.py \
+            --accessions {params.accessions} \
+            --out-prefix {params.prefix} \
+            --taxdump-dir {params.taxdump_dir}
+        """
+
+
+# ---- GTDB downloads (only when gtdb_release is configured) ------------------
+
+rule get_gtdb_bac_taxonomy:
+    output: f"{OUTPUT_ROOT}/{{db}}/gtdb/bac120_taxonomy.tsv"
+    params: url=lambda wc: gtdb_url(wc.db, "bac_tax_url")
+    threads: 2
+    resources: mem_gb=4, time=120, partition="compute"
+    shell:
+        """
+        mkdir -p $(dirname {output})
+        curl -fsSL -o {output}.gz "{params.url}"
+        gunzip -f {output}.gz
+        """
+
+
+rule get_gtdb_arc_taxonomy:
+    output: f"{OUTPUT_ROOT}/{{db}}/gtdb/ar53_taxonomy.tsv"
+    params: url=lambda wc: gtdb_url(wc.db, "arc_tax_url")
+    threads: 2
+    resources: mem_gb=4, time=120, partition="compute"
+    shell:
+        """
+        mkdir -p $(dirname {output})
+        curl -fsSL -o {output}.gz "{params.url}"
+        gunzip -f {output}.gz
+        """
+
+
+rule get_gtdb_bac_metadata:
+    output: f"{OUTPUT_ROOT}/{{db}}/gtdb/bac120_metadata.tsv"
+    params: url=lambda wc: gtdb_url(wc.db, "bac_meta_url")
+    threads: 2
+    resources: mem_gb=4, time=120, partition="compute"
+    shell:
+        """
+        mkdir -p $(dirname {output})
+        curl -fsSL -o {output}.gz "{params.url}"
+        gunzip -f {output}.gz
+        """
+
+
+rule get_gtdb_arc_metadata:
+    output: f"{OUTPUT_ROOT}/{{db}}/gtdb/ar53_metadata.tsv"
+    params: url=lambda wc: gtdb_url(wc.db, "arc_meta_url")
+    threads: 2
+    resources: mem_gb=4, time=120, partition="compute"
+    shell:
+        """
+        mkdir -p $(dirname {output})
+        curl -fsSL -o {output}.gz "{params.url}"
+        gunzip -f {output}.gz
+        """
 
 
 rule make_merged_metadata:
-    output:
-        metadata='GTDB/merged_metadata.tsv'
+    output: f"{OUTPUT_ROOT}/{{db}}/gtdb/merged_metadata.tsv"
     input:
-        bac120Metadata='GTDB/bac120_metadata_latest.tsv',
-        arc53Metadata='GTDB/ar53_metadata_latest.tsv',
+        bac=f"{OUTPUT_ROOT}/{{db}}/gtdb/bac120_metadata.tsv",
+        arc=f"{OUTPUT_ROOT}/{{db}}/gtdb/ar53_metadata.tsv",
     threads: 2
-    resources:
-        partition='compute'
+    resources: mem_gb=4, time=60, partition="compute"
     shell:
-        '''
-        cat {input.bac120Metadata} > {output.metadata};
-        cat {input.arc53Metadata} | grep -v "accession" >> {output.metadata};
-        '''
+        """
+        cat {input.bac} > {output}
+        grep -v '^accession' {input.arc} >> {output}
+        """
 
 
-rule get_GTDB_bac_tax:
-    output:
-        bacTax='GTDB/bac120_taxonomy_latest.tsv'
-    threads: 2
-    resources:
-        partition='compute'
-    params:
-        gtdbBacTax=config['gtdb-bac-tax']
+rule download_gtdb_genomes_tar:
+    output: f"{OUTPUT_ROOT}/{{db}}/gtdb/gtdb_genomes_reps.tar.gz"
+    params: url=lambda wc: gtdb_url(wc.db, "genomes_url")
+    threads: 4
+    resources: mem_gb=8, time=720, partition="compute"
     shell:
-        '''
-        mkdir -p GTDB
-        curl -o GTDB/bac120_taxonomy_latest.tsv.gz {params.gtdbBacTax};
-        gunzip -c GTDB/bac120_taxonomy_latest.tsv.gz > {output.bacTax};
-        '''
+        """
+        mkdir -p $(dirname {output})
+        curl -fsSL --retry 5 --retry-delay 30 -o {output} "{params.url}"
+        """
 
 
-rule get_GTDB_arc_tax:
-    output:
-        arcTax='GTDB/ar53_taxonomy_latest.tsv'
-    threads: 2
-    resources:
-        partition='compute'
-    params:
-        gtdbArcTax = config['gtdb-arc-tax']
-    shell:
-        '''
-        mkdir -p GTDB
-        curl -o GTDB/ar53_taxonomy_latest.tsv.gz {params.gtdbArcTax};
-        gunzip -c GTDB/ar53_taxonomy_latest.tsv.gz > {output.arcTax};
-        '''
-
+# ---- Merged taxonomy + per-accession downloads ------------------------------
 
 rule make_merged_taxonomy:
-    output:
-        metadata='GTDB/merged_taxonomy.tsv'
+    output: f"{OUTPUT_ROOT}/{{db}}/merged_taxonomy.tsv"
+    input: unpack(merged_tax_inputs)
+    threads: 2
+    resources: mem_gb=4, time=60, partition="compute"
+    run:
+        with open(output[0], "w") as out_fh:
+            if "bac" in input.keys():
+                with open(input.bac) as fh:
+                    for line in fh:
+                        out_fh.write(line)
+            if "arc" in input.keys():
+                with open(input.arc) as fh:
+                    next(fh, None)  # skip header if present
+                    for line in fh:
+                        out_fh.write(line)
+            with open(input.supp) as fh:
+                for line in fh:
+                    out_fh.write(line)
+
+
+rule download_supplemental_genome:
+    output: f"{OUTPUT_ROOT}/{{db}}/downloads/{{accession}}.fna.gz"
     input:
-        host_taxonomy='resources/eukaryotic_taxa.tsv',
-        arc_taxonomy='GTDB/ar53_taxonomy_latest.tsv',
-        bac_taxonomy='GTDB/bac120_taxonomy_latest.tsv',
-    threads: 2
-    resources:
-        partition='compute'
+        urls=f"{OUTPUT_ROOT}/{{db}}/supplemental.urls.tsv",
+    threads: 1
+    resources: mem_gb=2, time=120, partition="compute"
     shell:
-        '''
-        cat {input.host_taxonomy} > {output.metadata};
-        cat {input.arc_taxonomy} | grep -v "accession" >> {output.metadata};
-        cat {input.bac_taxonomy} | grep -v "accession" >> {output.metadata};
-        '''
+        """
+        mkdir -p $(dirname {output})
+        url=$(awk -F'\\t' -v acc='{wildcards.accession}' '$1==acc {{print $2}}' {input.urls})
+        if [ -z "$url" ]; then
+            echo "Error: no URL for accession {wildcards.accession} in {input.urls}" >&2
+            exit 1
+        fi
+        curl -fsSL --retry 5 --retry-delay 15 -o {output} "$url"
+        """
 
 
-rule get_genomes:
+# ---- Collect, convert, build ------------------------------------------------
+
+def collect_inputs(wildcards):
+    db = wildcards.db
+    accs = accessions_of(db)
+    inputs = {
+        "supplemental": expand(
+            f"{OUTPUT_ROOT}/{{db}}/downloads/{{acc}}.fna.gz",
+            db=[db], acc=accs,
+        ),
+    }
+    if has_gtdb(db):
+        inputs["gtdb_tar"] = f"{OUTPUT_ROOT}/{db}/gtdb/gtdb_genomes_reps.tar.gz"
+    return inputs
+
+
+rule collect_genomes:
     output:
-        gtdb_genomes_gz= protected('GTDB/gtdb_genomes_reps_latest.tar.gz'),
-        sheep_gz = protected('GTDB/host_genomes/GCF_016772045.2_genomic.fna.gz'),
-        cow_gz = protected('GTDB/host_genomes/GCF_002263795.3_genomic.fna.gz'),
-        goat_gz = protected('GTDB/host_genomes/GCF_001704415.2_genomic.fna.gz'),
-        deer_gz = protected('GTDB/host_genomes/GCF_910594005.1_genomic.fna.gz'),
-        wapiti_gz = protected('GTDB/host_genomes/GCF_019320065.1_genomic.fna.gz'),
-        Entodinium_caudatum_gz = protected('GTDB/protist_genomes/GCA_002087855.3_genomic.fna.gz'),
-        Entodinium_longinucleatum_gz = protected('GTDB/protist_genomes/GCA_023897235.1_genomic.fna.gz'),
-        Entodinium_bursa_gz = protected('GTDB/protist_genomes/GCA_023807345.1_genomic.fna.gz'),
-        Epidinium_caudatum_gz = protected('GTDB/protist_genomes/GCA_023807225.1_genomic.fna.gz'),
-        Epidinium_cattanei_gz = protected('GTDB/protist_genomes/GCA_023805625.1_genomic.fna.gz'),
-        Diplodinium_dentatum_gz = protected('GTDB/protist_genomes/GCA_023807165.1_genomic.fna.gz'),
-        Diplodinium_flabellum_gz = protected('GTDB/protist_genomes/GCA_023806845.1_genomic.fna.gz'),
-        Isotricha_intestinalis_gz = protected('GTDB/protist_genomes/GCA_023807065.1_genomic.fna.gz'),
-        Isotricha_prostoma_gz = protected('GTDB/protist_genomes/GCA_023807205.1_genomic.fna.gz'),
-        Isotricha_YL_2021a_gz = protected('GTDB/protist_genomes/GCA_023806865.1_genomic.fna.gz'),
-        Isotricha_YL_2021b_gz = protected('GTDB/protist_genomes/GCA_023805745.1_genomic.fna.gz'),
-        Dasytricha_ruminantium_gz = protected('GTDB/protist_genomes/GCA_023805585.1_genomic.fna.gz'),
-        Ophryoscolex_caudatus_gz = protected('GTDB/protist_genomes/GCA_023806825.1_genomic.fna.gz'),
-        Polyplastron_multivesiculatum_gz= protected('GTDB/protist_genomes/GCA_023783355.1_genomic.fna.gz'),
-        Eremoplastron_rostratum_gz = protected('GTDB/protist_genomes/GCA_023805755.1_genomic.fna.gz'),
-        Ostracodinium_gracile_gz = protected('GTDB/protist_genomes/GCA_023805685.1_genomic.fna.gz'),
-        Metadinium_minorum_gz = protected('GTDB/protist_genomes/GCA_023807265.1_genomic.fna.gz'),
-        Enoploplastron_triloricatum_gz = protected('GTDB/protist_genomes/GCA_023783335.1_genomic.fna.gz'),
-        Ostracodinium_dentatum_gz = protected('GTDB/protist_genomes/GCA_023805525.1_genomic.fna.gz'),
-        Anaeromyces_S4_gz = protected('GTDB/fungi_genomes/GCA_002104895.1_genomic.fna.gz'),
-        Caecomyces_SIG737_gz = protected('GTDB/fungi_genomes/GCA_027248405.1_genomic.fna.gz'),
-        Neocallimastix_californiae_gz = protected('GTDB/fungi_genomes/GCA_002104975.1_genomic.fna.gz'),
-        Neocallimastix_JGI_2020a_gz = protected('GTDB/fungi_genomes/GCA_016946835.1_genomic.fna.gz'),
-        Piromyces_finnis_gz = protected('GTDB/fungi_genomes/GCA_002104945.1_genomic.fna.gz'),
-        Piromyces_E2_gz = protected('GTDB/fungi_genomes/GCA_002157105.1_genomic.fna.gz'),
-        Piromyces_SIG733_gz = protected('GTDB/fungi_genomes/GCA_027248865.1_genomic.fna.gz'),
-        Orpinomyces_sp_gz = protected('GTDB/fungi_genomes/GCA_000412615.1_genomic.fna.gz'),
-    threads: 2
-    resources:
-        partition='compute'
-    resources:
-        time = lambda wildcards, attempt: attempt * 1 * 24 * 60
+        flag=f"{OUTPUT_ROOT}/{{db}}/input_genomes/.collected",
+        dir=directory(f"{OUTPUT_ROOT}/{{db}}/input_genomes"),
+    input: unpack(collect_inputs)
     params:
-        gtdbGenomes=config['gtdb-genomes'],
-        sheep=config['sheep-genome'],
-        cow=config['cow-genome'],
-        goat=config['goat-genome'],
-        deer=config['deer-genome'],
-        wapiti=config['wapiti-genome'],
-        Entodinium_caudatum=config['Entodinium-caudatum'],
-        Entodinium_longinucleatum=config['Entodinium-longinucleatum'],
-        Entodinium_bursa=config['Entodinium-bursa'],
-        Epidinium_caudatum=config['Epidinium-caudatum'],
-        Epidinium_cattanei=config['Epidinium-cattanei'],
-        Diplodinium_dentatum=config['Diplodinium-dentatum'],
-        Diplodinium_flabellum=config['Diplodinium-flabellum'],
-        Isotricha_intestinalis=config['Isotricha-intestinalis'],
-        Isotricha_prostoma=config['Isotricha-prostoma'],
-        Isotricha_YL_2021a=config['Isotricha-YL-2021a'],
-        Isotricha_YL_2021b=config['Isotricha-YL-2021b'],
-        Dasytricha_ruminantium=config['Dasytricha-ruminantium'],
-        Ophryoscolex_caudatus=config['Ophryoscolex-caudatus'],
-        Polyplastron_multivesiculatum=config['Polyplastron-multivesiculatum'],
-        Eremoplastron_rostratum=config['Eremoplastron-rostratum'],
-        Ostracodinium_gracile=config['Ostracodinium-gracile'],
-        Metadinium_minorum=config['Metadinium-minorum'],
-        Enoploplastron_triloricatum=config['Enoploplastron-triloricatum'],
-        Ostracodinium_dentatum=config['Ostracodinium-dentatum'],
-        Anaeromyces_S4=config['Anaeromyces-S4'],
-        Caecomyces_SIG737=config['Caecomyces-SIG737'],
-        Neocallimastix_californiae=config['Neocallimastix-californiae'],
-        Neocallimastix_JGI_2020a=config['Neocallimastix-JGI-2020a'],
-        Piromyces_finnis=config['Piromyces-finnis'],
-        Piromyces_E2=config['Piromyces-E2'],
-        Piromyces_SIG733=config['Piromyces-SIG733'],
-        Orpinomyces_sp=config['Orpinomyces-sp'],
+        gtdb_tar=lambda wc: (f"{OUTPUT_ROOT}/{wc.db}/gtdb/gtdb_genomes_reps.tar.gz"
+                             if has_gtdb(wc.db) else ""),
+    threads: 4
+    resources: mem_gb=8, time=240, partition="compute"
     shell:
-        '''
-        mkdir -p GTDB/host_genomes
-        mkdir -p GTDB/protist_genomes
-        mkdir -p GTDB/fungi_genomes
-
-        curl -o {output.sheep_gz} {params.sheep};
-        curl -o {output.cow_gz} {params.cow};
-        curl -o {output.goat_gz} {params.goat};
-        curl -o {output.deer_gz} {params.deer};
-        curl -o {output.wapiti_gz} {params.wapiti};
-
-        curl -o {output.Entodinium_caudatum_gz} {params.Entodinium_caudatum};
-        curl -o {output.Entodinium_longinucleatum_gz} {params.Entodinium_longinucleatum};
-        curl -o {output.Entodinium_bursa_gz} {params.Entodinium_bursa};
-        curl -o {output.Epidinium_caudatum_gz} {params.Epidinium_caudatum};
-        curl -o {output.Epidinium_cattanei_gz} {params.Epidinium_cattanei};
-        curl -o {output.Diplodinium_dentatum_gz} {params.Diplodinium_dentatum};
-        curl -o {output.Diplodinium_flabellum_gz} {params.Diplodinium_flabellum};
-        curl -o {output.Isotricha_intestinalis_gz} {params.Isotricha_intestinalis};
-        curl -o {output.Isotricha_prostoma_gz} {params.Isotricha_prostoma};
-        curl -o {output.Isotricha_YL_2021a_gz} {params.Isotricha_YL_2021a};
-        curl -o {output.Isotricha_YL_2021b_gz} {params.Isotricha_YL_2021b};
-        curl -o {output.Dasytricha_ruminantium_gz} {params.Dasytricha_ruminantium};
-        curl -o {output.Ophryoscolex_caudatus_gz} {params.Ophryoscolex_caudatus};
-        curl -o {output.Polyplastron_multivesiculatum_gz} {params.Polyplastron_multivesiculatum};
-        curl -o {output.Eremoplastron_rostratum_gz} {params.Eremoplastron_rostratum};
-        curl -o {output.Ostracodinium_gracile_gz} {params.Ostracodinium_gracile};
-        curl -o {output.Metadinium_minorum_gz} {params.Metadinium_minorum};
-        curl -o {output.Enoploplastron_triloricatum_gz} {params.Enoploplastron_triloricatum};
-        curl -o {output.Ostracodinium_dentatum_gz} {params.Ostracodinium_dentatum};
-        curl -o {output.Anaeromyces_S4_gz} {params.Anaeromyces_S4};
-        curl -o {output.Caecomyces_SIG737_gz} {params.Caecomyces_SIG737};
-        curl -o {output.Neocallimastix_californiae_gz} {params.Neocallimastix_californiae};
-        curl -o {output.Neocallimastix_JGI_2020a_gz} {params.Neocallimastix_JGI_2020a};
-        curl -o {output.Piromyces_finnis_gz} {params.Piromyces_finnis};
-        curl -o {output.Piromyces_E2_gz} {params.Piromyces_E2};
-        curl -o {output.Piromyces_SIG733_gz} {params.Piromyces_SIG733};
-        curl -o {output.Orpinomyces_sp_gz} {params.Orpinomyces_sp};
-
-        curl -o {output.gtdb_genomes_gz} {params.gtdbGenomes};
-
-        '''
-
-
-rule prepare_GTDB_genomes:
-    input:
-        gtdb= 'GTDB/gtdb_genomes_reps_latest.tar.gz',
-        sheep_gz = 'GTDB/host_genomes/GCF_016772045.2_genomic.fna.gz',
-        cow_gz = 'GTDB/host_genomes/GCF_002263795.3_genomic.fna.gz',
-        goat_gz = 'GTDB/host_genomes/GCF_001704415.2_genomic.fna.gz',
-        deer_gz = 'GTDB/host_genomes/GCF_910594005.1_genomic.fna.gz',
-        wapiti_gz = 'GTDB/host_genomes/GCF_019320065.1_genomic.fna.gz',
-        Entodinium_caudatum_gz = 'GTDB/protist_genomes/GCA_002087855.3_genomic.fna.gz',
-        Entodinium_longinucleatum_gz = 'GTDB/protist_genomes/GCA_023897235.1_genomic.fna.gz',
-        Entodinium_bursa_gz = 'GTDB/protist_genomes/GCA_023807345.1_genomic.fna.gz',
-        Epidinium_caudatum_gz = 'GTDB/protist_genomes/GCA_023807225.1_genomic.fna.gz',
-        Epidinium_cattanei_gz = 'GTDB/protist_genomes/GCA_023805625.1_genomic.fna.gz',
-        Diplodinium_dentatum_gz = 'GTDB/protist_genomes/GCA_023807165.1_genomic.fna.gz',
-        Diplodinium_flabellum_gz = 'GTDB/protist_genomes/GCA_023806845.1_genomic.fna.gz',
-        Isotricha_intestinalis_gz = 'GTDB/protist_genomes/GCA_023807065.1_genomic.fna.gz',
-        Isotricha_prostoma_gz = 'GTDB/protist_genomes/GCA_023807205.1_genomic.fna.gz',
-        Isotricha_YL_2021a_gz = 'GTDB/protist_genomes/GCA_023806865.1_genomic.fna.gz',
-        Isotricha_YL_2021b_gz = 'GTDB/protist_genomes/GCA_023805745.1_genomic.fna.gz',
-        Dasytricha_ruminantium_gz = 'GTDB/protist_genomes/GCA_023805585.1_genomic.fna.gz',
-        Ophryoscolex_caudatus_gz = 'GTDB/protist_genomes/GCA_023806825.1_genomic.fna.gz',
-        Polyplastron_multivesiculatum_gz= 'GTDB/protist_genomes/GCA_023783355.1_genomic.fna.gz',
-        Eremoplastron_rostratum_gz = 'GTDB/protist_genomes/GCA_023805755.1_genomic.fna.gz',
-        Ostracodinium_gracile_gz = 'GTDB/protist_genomes/GCA_023805525.1_genomic.fna.gz',
-        Metadinium_minorum_gz = 'GTDB/protist_genomes/GCA_023807265.1_genomic.fna.gz',
-        Enoploplastron_triloricatum_gz = 'GTDB/protist_genomes/GCA_023783335.1_genomic.fna.gz',
-        Ostracodinium_dentatum_gz = 'GTDB/protist_genomes/GCA_023805525.1_genomic.fna.gz',
-        Anaeromyces_S4_gz = 'GTDB/fungi_genomes/GCA_002104895.1_genomic.fna.gz',
-        Caecomyces_SIG737_gz = 'GTDB/fungi_genomes/GCA_027248405.1_genomic.fna.gz',
-        Neocallimastix_californiae_gz = 'GTDB/fungi_genomes/GCA_002104975.1_genomic.fna.gz',
-        Neocallimastix_JGI_2020a_gz = 'GTDB/fungi_genomes/GCA_016946835.1_genomic.fna.gz',
-        Piromyces_finnis_gz = 'GTDB/fungi_genomes/GCA_002104945.1_genomic.fna.gz',
-        Piromyces_E2_gz = 'GTDB/fungi_genomes/GCA_002157105.1_genomic.fna.gz',
-        Piromyces_SIG733_gz = 'GTDB/fungi_genomes/GCA_027248865.1_genomic.fna.gz',
-        Orpinomyces_sp_gz = 'GTDB/fungi_genomes/GCA_000412615.1_genomic.fna.gz',
-    output:
-        directory('GTDB/input_genomes')
-    threads: 2
-    resources:
-        partition='compute',
-        time = lambda wildcards, attempt: attempt * 1 * 24 * 60
-    shell:
-        '''
-
-        mkdir -p {output}
-        find GTDB/host_genomes -name "*.fna.gz" -exec mv -t {output}/ {{}} +;
-
-        find GTDB/protist_genomes -name "*.fna.gz" -exec mv -t {output}/ {{}} +;
-        find GTDB/fungi_genomes -name "*.fna.gz" -exec mv -t {output}/ {{}} +;
-
-        mkdir GTDB/gtdb_genomes_reps_latest
-        tar -xvzf {input.gtdb} -C GTDB/gtdb_genomes_reps_latest
-        find GTDB/gtdb_genomes_reps_latest -name "*.fna.gz" -exec mv -t {output}/ {{}} +;
-
-        '''
-
-
-rule prepare_kraken2_genomes:
-    input:
-        genomes='GTDB/input_genomes',
-        taxonomy='GTDB/merged_taxonomy.tsv',
-        tax_from_gtdb='workflow/scripts/tax_from_gtdb.py'
-    output:
-        genomes_out = directory('GTDB/kraken_genomes'),
-        nodes = 'GTDB/nodes.dmp',
-        names = 'GTDB/names.dmp'
-    conda:
-        'kraken2'
-    threads: 2
-    resources:
-        partition='compute',
-        time = lambda wildcards, attempt: attempt * 3 * 24 * 60,
-    shell:
-        '''
-        python {input.tax_from_gtdb} --gtdb {input.taxonomy} --assemblies {input.genomes} --nodes {output.nodes} --names {output.names} --kraken_dir {output.genomes_out} &&
-        rm -r GTDB/gtdb_genomes_reps_latest
-        rm -r GTDB/host_genomes
-        rm -r GTDB/protist_genomes
-        rm -r GTDB/fungi_genomes
-        '''
-
-
-rule prepare_kraken2_build:
-    input:
-        genomes = 'GTDB/kraken_genomes',
-        nodes = 'GTDB/nodes.dmp',
-        names = 'GTDB/names.dmp',
-    output:
-        names_prep = 'GTDB/kraken2-GTDB-220.0/taxonomy/names.dmp',
-        nodes_prep = 'GTDB/kraken2-GTDB-220.0/taxonomy/nodes.dmp',
-    conda:
-        'kraken2'
-    threads: 32
-    resources:
-        partition='compute',
-        time = lambda wildcards, attempt: attempt * 5 * 24 * 60,
-        mem_gb = lambda wildcards, attempt: attempt * 100
-    shell:
-        '''
-        mkdir -p GTDB/kraken2-GTDB-220.0/taxonomy
-
-        cp {input.nodes} GTDB/kraken2-GTDB-220.0/taxonomy/nodes.dmp
-        cp {input.names} GTDB/kraken2-GTDB-220.0/taxonomy/names.dmp
-
-        for file in $(ls {input.genomes});
-        do
-            kraken2-build --threads {threads} --add-to-library {input.genomes}/$file --db GTDB/kraken2-GTDB-220.0
+        """
+        mkdir -p {output.dir}
+        for f in {input.supplemental}; do
+            cp -n "$f" {output.dir}/
         done
+        if [ -n "{params.gtdb_tar}" ] && [ -s "{params.gtdb_tar}" ]; then
+            tar -xzf "{params.gtdb_tar}" -C {output.dir}
+            find {output.dir} -mindepth 2 -type f -name '*.fna.gz' -exec mv -n {{}} {output.dir}/ \\;
+            find {output.dir} -mindepth 1 -type d -empty -delete
+        fi
+        touch {output.flag}
+        """
 
 
-        '''
+rule convert_taxonomy:
+    output:
+        nodes=f"{OUTPUT_ROOT}/{{db}}/taxonomy/nodes.dmp",
+        names=f"{OUTPUT_ROOT}/{{db}}/taxonomy/names.dmp",
+        kraken_dir=directory(f"{OUTPUT_ROOT}/{{db}}/kraken_input"),
+        conv=f"{OUTPUT_ROOT}/{{db}}/taxonomy/conversion.tsv",
+    input:
+        merged=f"{OUTPUT_ROOT}/{{db}}/merged_taxonomy.tsv",
+        flag=f"{OUTPUT_ROOT}/{{db}}/input_genomes/.collected",
+        genomes_dir=f"{OUTPUT_ROOT}/{{db}}/input_genomes",
+    threads: 4
+    resources: mem_gb=16, time=240, partition="compute"
+    conda: "workflow/env/kraken2.yaml"
+    shell:
+        """
+        mkdir -p $(dirname {output.nodes})
+        rm -rf {output.kraken_dir}
+        python workflow/scripts/tax_from_gtdb.py \
+            --gtdb {input.merged} \
+            --assemblies {input.genomes_dir} \
+            --nodes {output.nodes} \
+            --names {output.names} \
+            --conversion {output.conv} \
+            --kraken_dir {output.kraken_dir}
+        """
+
+
+rule populate_library:
+    output:
+        flag=f"{OUTPUT_ROOT}/{{db}}/.library_populated",
+    input:
+        kraken_dir=f"{OUTPUT_ROOT}/{{db}}/kraken_input",
+        nodes=f"{OUTPUT_ROOT}/{{db}}/taxonomy/nodes.dmp",
+        names=f"{OUTPUT_ROOT}/{{db}}/taxonomy/names.dmp",
+    params:
+        db_dir=lambda wc: f"{OUTPUT_ROOT}/{wc.db}",
+    threads: lambda wc: res(wc.db, "add_to_library", "threads", 16)
+    resources:
+        mem_gb=lambda wc: res(wc.db, "add_to_library", "mem_gb", 24),
+        time=lambda wc: res(wc.db, "add_to_library", "time", 1440),
+        partition=lambda wc: res(wc.db, "add_to_library", "partition", "compute"),
+    conda: "workflow/env/kraken2.yaml"
+    shell:
+        """
+        # nodes.dmp/names.dmp are already at {params.db_dir}/taxonomy/ from convert_taxonomy
+        rm -rf {params.db_dir}/library
+        shopt -s nullglob
+        for fa in {input.kraken_dir}/*.fa {input.kraken_dir}/*.fna; do
+            kraken2-build --add-to-library "$fa" --db {params.db_dir} --threads {threads} --no-masking
+        done
+        touch {output.flag}
+        """
 
 
 rule build_kraken2:
-    input:
-        names_prep = 'GTDB/kraken2-GTDB-220.0/taxonomy/names.dmp',
-        nodes_prep = 'GTDB/kraken2-GTDB-220.0/taxonomy/nodes.dmp',
     output:
-        kraken2_index = 'GTDB/kraken2-GTDB-220.0/hash.k2d',
-    conda:
-        'kraken2'
-    threads: 64
-    benchmark:
-        'benchmark/build_kraken2.txt'
-    resources:
-        partition='hugemem',
-        time = lambda wildcards, attempt: attempt * 5 * 24 * 60,
-        mem_gb = lambda wildcards, attempt: attempt * 1600
-    shell:
-        '''
-        kraken2-build --build --threads {threads} --db GTDB/kraken2-GTDB-220.0
-
-        '''
-
-
-rule prepare_kraken2_host_genomes:
+        hash=f"{OUTPUT_ROOT}/{{db}}/hash.k2d",
+        opts=f"{OUTPUT_ROOT}/{{db}}/opts.k2d",
+        taxo=f"{OUTPUT_ROOT}/{{db}}/taxo.k2d",
     input:
-        host_taxonomy='resources/host_taxa.tsv',
-        tax_from_gtdb='workflow/scripts/tax_from_gtdb.py'
-    output:
-        genomes_out = directory('GTDB/kraken_host_genomes'),
-        nodes = 'GTDB/nodes.host.dmp',
-        names = 'GTDB/names.host.dmp',
-    conda:
-        'kraken2'
-    threads: 2
-    resources:
-        partition='compute',
-        mem_gb = lambda wildcards, attempt: attempt * 16,
-        time = lambda wildcards, attempt: attempt * 2 * 24 * 60,
+        flag=f"{OUTPUT_ROOT}/{{db}}/.library_populated",
     params:
-        gtdbGenomes=config['gtdb-genomes'],
-        sheep=config['sheep-genome'],
-        cow=config['cow-genome'],
-        goat=config['goat-genome'],
-        deer=config['deer-genome'],
-        wapiti=config['wapiti-genome'],
-    shell:
-        '''
-        mkdir -p GTDB/host_genomes
-
-        curl -o GTDB/host_genomes/GCF_016772045.2_genomic.fna.gz {params.sheep};
-        curl -o GTDB/host_genomes/GCF_002263795.3_genomic.fna.gz {params.cow};
-        curl -o GTDB/host_genomes/GCF_001704415.2_genomic.fna.gz {params.goat};
-        curl -o GTDB/host_genomes/GCF_910594005.1_genomic.fna.gz {params.deer};
-        curl -o GTDB/host_genomes/GCF_019320065.1_genomic.fna.gz {params.wapiti};
-
-
-        python {input.tax_from_gtdb} --gtdb {input.host_taxonomy} --assemblies GTDB/host_genomes --nodes {output.nodes} --names {output.names} --kraken_dir {output.genomes_out}
-
-        '''
-
-
-rule prepare_kraken2_hosts_build:
-    input:
-        genomes = 'GTDB/kraken_host_genomes',
-        nodes = 'GTDB/nodes.host.dmp',
-        names = 'GTDB/names.host.dmp'
-    output:
-        names_prep = 'GTDB/kraken2-hosts/taxonomy/names.dmp',
-        nodes_prep = 'GTDB/kraken2-hosts/taxonomy/nodes.dmp',
-    conda:
-        'kraken2'
-    threads: 16
+        db_dir=lambda wc: f"{OUTPUT_ROOT}/{wc.db}",
+        kmer=lambda wc: spec_of(wc.db).get("build_params", {}).get("kmer_len", 35),
+        mink=lambda wc: spec_of(wc.db).get("build_params", {}).get("minimizer_len", 31),
+        sp=lambda wc: spec_of(wc.db).get("build_params", {}).get("minimizer_spaces", 7),
+    threads: lambda wc: res(wc.db, "build", "threads", 64)
     resources:
-        partition='compute',
-        time = lambda wildcards, attempt: attempt * 2 * 24 * 60,
-        mem_gb = lambda wildcards, attempt: attempt * 24
+        mem_gb=lambda wc: res(wc.db, "build", "mem_gb", 1600),
+        time=lambda wc: res(wc.db, "build", "time", 4320),
+        partition=lambda wc: res(wc.db, "build", "partition", "hugemem"),
+    conda: "workflow/env/kraken2.yaml"
     shell:
-        '''
-        mkdir -p GTDB/kraken2-hosts/taxonomy
-
-        cp {input.nodes} GTDB/kraken2-hosts/taxonomy/nodes.dmp
-        cp {input.names} GTDB/kraken2-hosts/taxonomy/names.dmp
-
-        for file in $(ls {input.genomes});
-        do
-            kraken2-build --threads {threads} --add-to-library {input.genomes}/$file --db GTDB/kraken2-hosts
-        done
+        """
+        kraken2-build --build \
+            --db {params.db_dir} \
+            --threads {threads} \
+            --kmer-len {params.kmer} \
+            --minimizer-len {params.mink} \
+            --minimizer-spaces {params.sp}
+        """
 
 
-        '''
+# ---- Manifest --------------------------------------------------------------
+
+def manifest_inputs(wildcards):
+    db = wildcards.db
+    base = f"{OUTPUT_ROOT}/{db}"
+    inputs = {
+        "hash": f"{base}/hash.k2d",
+        "supp_tax": f"{base}/supplemental.taxonomy.tsv",
+        "supp_urls": f"{base}/supplemental.urls.tsv",
+        "merged_tax": f"{base}/merged_taxonomy.tsv",
+    }
+    if has_gtdb(db):
+        inputs["bac_tax"] = f"{base}/gtdb/bac120_taxonomy.tsv"
+        inputs["arc_tax"] = f"{base}/gtdb/ar53_taxonomy.tsv"
+        inputs["bac_meta"] = f"{base}/gtdb/bac120_metadata.tsv"
+        inputs["arc_meta"] = f"{base}/gtdb/ar53_metadata.tsv"
+        inputs["gtdb_tar"] = f"{base}/gtdb/gtdb_genomes_reps.tar.gz"
+    return inputs
 
 
-rule build_kraken2_hosts:
-    input:
-        names_prep = 'GTDB/kraken2-hosts/taxonomy/names.dmp',
-        nodes_prep = 'GTDB/kraken2-hosts/taxonomy/nodes.dmp',
-    output:
-        kraken2_index = 'GTDB/kraken2-hosts/hash.k2d',
-    conda:
-        'kraken2'
-    threads: 64
-    benchmark:
-        'benchmark/build_kraken2_hosts.txt'
-    resources:
-        partition='hugemem',
-        time = lambda wildcards, attempt: attempt * 24 * 60,
-        mem_gb = lambda wildcards, attempt: attempt * 1600
-    shell:
-        '''
-        kraken2-build --build --threads {threads} --db GTDB/kraken2-hosts
-        '''
-
-
-rule kraken2_prebuilt_ntdb:
-    output:
-        'K2NT-20230205/hash.k2d'
-    threads: 2
-    resources:
-        partition='compute'
+rule write_manifest:
+    output: f"{OUTPUT_ROOT}/{{db}}/MANIFEST.{{db}}.json"
+    input: unpack(manifest_inputs)
     params:
-        k2_prebuilt_nt = config['k2nt']
+        db_dir=lambda wc: f"{OUTPUT_ROOT}/{wc.db}",
+        name=lambda wc: wc.db,
+        label=lambda wc: spec_of(wc.db).get("label", DB_BY_DIR[wc.db]),
+        release=lambda wc: spec_of(wc.db).get("gtdb_release", "") or "",
+        accessions_file=lambda wc: spec_of(wc.db)["supplemental_accessions"],
+        kmer=lambda wc: spec_of(wc.db).get("build_params", {}).get("kmer_len", 35),
+        mink=lambda wc: spec_of(wc.db).get("build_params", {}).get("minimizer_len", 31),
+        sp=lambda wc: spec_of(wc.db).get("build_params", {}).get("minimizer_spaces", 7),
+        opt_gtdb_args=lambda wc: (
+            f"--gtdb-bac-tax {OUTPUT_ROOT}/{wc.db}/gtdb/bac120_taxonomy.tsv "
+            f"--gtdb-arc-tax {OUTPUT_ROOT}/{wc.db}/gtdb/ar53_taxonomy.tsv "
+            f"--gtdb-bac-meta {OUTPUT_ROOT}/{wc.db}/gtdb/bac120_metadata.tsv "
+            f"--gtdb-arc-meta {OUTPUT_ROOT}/{wc.db}/gtdb/ar53_metadata.tsv "
+            f"--gtdb-genomes-tar {OUTPUT_ROOT}/{wc.db}/gtdb/gtdb_genomes_reps.tar.gz"
+        ) if has_gtdb(wc.db) else "",
+    threads: 1
+    resources: mem_gb=2, time=15, partition="compute"
+    conda: "workflow/env/kraken2.yaml"
     shell:
-        '''
-        curl -o K2NT-20230205.tar.gz {params.k2_prebuilt_nt};
-        mkdir -p K2NT-20230205
-        tar -xvzf K2NT-20230205.tar.gz -C K2NT-20230205
-        '''
-
-
-#rule humann3_protein: #TODO
-    
-
-#rule humann3_default: #TODO
+        """
+        python workflow/scripts/write_manifest.py \
+            --db-dir {params.db_dir} \
+            --name {params.name} \
+            --label {params.label} \
+            --gtdb-release "{params.release}" \
+            --accessions-file {params.accessions_file} \
+            --supplemental-taxonomy {input.supp_tax} \
+            --supplemental-urls {input.supp_urls} \
+            --merged-taxonomy {input.merged_tax} \
+            --kmer-len {params.kmer} \
+            --minimizer-len {params.mink} \
+            --minimizer-spaces {params.sp} \
+            {params.opt_gtdb_args}
+        """

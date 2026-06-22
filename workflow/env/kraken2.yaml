@@ -1,0 +1,13 @@
+name: kraken2
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python>=3.9
+  - biopython
+  - kraken2>=2.1.3
+  - ncbi-datasets-cli>=16
+  - taxonkit>=0.13
+  - pigz
+  - curl
+  - rsync

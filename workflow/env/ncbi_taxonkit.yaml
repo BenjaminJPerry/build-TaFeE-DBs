@@ -1,0 +1,9 @@
+name: ncbi_taxonkit
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python>=3.9
+  - ncbi-datasets-cli>=16
+  - taxonkit>=0.13
+  - jq

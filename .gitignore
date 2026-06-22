@@ -1,0 +1,14 @@
+# Snakemake
+.snakemake/
+
+# Large built databases / data outputs
+GTDB/
+GTDB214_Rambv3/
+benchmark/
+logs/
+resources/genomes/
+test_run/
+
+# Local config / backups
+config/test_config.yaml
+eRI-v7-backup.yaml
